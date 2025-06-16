@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -186,7 +187,7 @@ const WeeklyPlanContent = () => {
   const getComparisonText = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? '+100%' : '0%';
     const change = ((current - previous) / previous * 100).toFixed(0);
-    return `${change >= 0 ? '+' : ''}${change}%`;
+    return `${Number(change) >= 0 ? '+' : ''}${change}%`;
   };
 
   return (
@@ -433,7 +434,7 @@ const WeeklyPlanContent = () => {
                         </div>
                         
                         <div className="space-y-1">
-                          <h4 className="font-medium text-sm">{training.title}</h4>
+                          <div className="font-medium text-sm">{training.title}</div>
                           
                           <div className="flex items-center text-xs text-gray-600">
                             <Clock className="h-3 w-3 mr-1" />
@@ -448,9 +449,9 @@ const WeeklyPlanContent = () => {
                           )}
                           
                           {training.notes && (
-                            <p className="text-xs text-gray-600 line-clamp-2">
+                            <div className="text-xs text-gray-600 line-clamp-2">
                               {training.notes}
-                            </p>
+                            </div>
                           )}
                         </div>
                       </div>
