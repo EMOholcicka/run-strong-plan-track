@@ -351,19 +351,19 @@ const WeeklyPlanContent = () => {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-2 min-h-[200px]">
                   {dayTrainings.length > 0 ? (
                     dayTrainings.map((training) => (
                       <div
                         key={training.id}
-                        className={`p-3 rounded-lg border ${getTrainingCardStyle(training)}`}
+                        className={`p-3 rounded-lg border ${getTrainingCardStyle(training)} overflow-hidden`}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${getTrainingBadgeStyle(training)}`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${getTrainingBadgeStyle(training)}`}>
                             {getTrainingTypeDisplay(training)}
                           </span>
                           
-                          <div className="flex space-x-1">
+                          <div className="flex space-x-1 flex-shrink-0 ml-2">
                             {!training.completed && (
                               <>
                                 <Button
@@ -395,21 +395,21 @@ const WeeklyPlanContent = () => {
                           </div>
                         </div>
                         
-                        <h4 className="font-medium text-sm mb-1">{training.title}</h4>
+                        <h4 className="font-medium text-sm mb-2 break-words">{training.title}</h4>
                         
-                        <div className="flex items-center text-xs text-gray-500 space-x-2">
-                          <Clock className="h-3 w-3" />
+                        <div className="flex items-center text-xs text-gray-600 space-x-2 mb-2">
+                          <Clock className="h-3 w-3 flex-shrink-0" />
                           <span>{training.plannedDuration}min</span>
                           {training.plannedDistance && (
                             <>
-                              <MapPin className="h-3 w-3" />
+                              <MapPin className="h-3 w-3 flex-shrink-0" />
                               <span>{training.plannedDistance}km</span>
                             </>
                           )}
                         </div>
                         
                         {training.notes && (
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          <p className="text-xs text-gray-600 break-words line-clamp-2">
                             {training.notes}
                           </p>
                         )}
