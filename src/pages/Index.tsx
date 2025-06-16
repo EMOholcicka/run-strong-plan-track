@@ -1,14 +1,13 @@
 
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { TrainingProvider, useTraining } from "@/contexts/TrainingContext";
-import { Activity, Calendar, Clock, TrendingUp, Plus } from "lucide-react";
+import { Activity, Calendar, Clock, TrendingUp, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
 const DashboardContent = () => {
-  const { trainings, plannedTrainings } = useTraining();
+  const { trainings, plannedTrainings, getWeeklyStats } = useTraining();
   
   const recentTrainings = trainings.slice(0, 3);
   const totalTrainings = trainings.length;
@@ -26,6 +25,28 @@ const DashboardContent = () => {
   const upcomingPlanned = plannedTrainings
     .filter(p => new Date(p.date) >= new Date())
     .slice(0, 2);
+
+  // Weekly comparison
+  const thisWeekStats = getWeeklyStats(0);
+  const lastWeekStats = getWeeklyStats(-1);
+  
+  const getComparisonIcon = (current: number, previous: number) => {
+    if (current > previous) return <ArrowUp className="h-4 w-4 text-green-600" />;
+    if (current < previous) return <ArrowDown className="h-4 w-4 text-red-600" />;
+    return <Minus className="h-4 w-4 text-gray-400" />;
+  };
+
+  const getComparisonText = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const change = ((current - previous) / previous) * 100;
+    return `${change > 0 ? '+' : ''}${Math.round(change)}%`;
+  };
+
+  const getComparisonColor = (current: number, previous: number) => {
+    if (current > previous) return 'text-green-600';
+    if (current < previous) return 'text-red-600';
+    return 'text-gray-400';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -81,6 +102,63 @@ const DashboardContent = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Weekly Comparison */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2" />
+              This Week vs Last Week
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-1">
+                  <span className="text-2xl font-bold text-blue-600">{thisWeekStats.totalSessions}</span>
+                  {getComparisonIcon(thisWeekStats.totalSessions, lastWeekStats.totalSessions)}
+                </div>
+                <p className="text-sm text-gray-500">Total Sessions</p>
+                <p className={`text-xs ${getComparisonColor(thisWeekStats.totalSessions, lastWeekStats.totalSessions)}`}>
+                  {getComparisonText(thisWeekStats.totalSessions, lastWeekStats.totalSessions)} vs last week
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-1">
+                  <span className="text-2xl font-bold text-green-600">{Math.round(thisWeekStats.totalDuration)} min</span>
+                  {getComparisonIcon(thisWeekStats.totalDuration, lastWeekStats.totalDuration)}
+                </div>
+                <p className="text-sm text-gray-500">Total Time</p>
+                <p className={`text-xs ${getComparisonColor(thisWeekStats.totalDuration, lastWeekStats.totalDuration)}`}>
+                  {getComparisonText(thisWeekStats.totalDuration, lastWeekStats.totalDuration)} vs last week
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-1">
+                  <span className="text-2xl font-bold text-orange-600">{thisWeekStats.totalDistance.toFixed(1)} km</span>
+                  {getComparisonIcon(thisWeekStats.totalDistance, lastWeekStats.totalDistance)}
+                </div>
+                <p className="text-sm text-gray-500">Running Distance</p>
+                <p className={`text-xs ${getComparisonColor(thisWeekStats.totalDistance, lastWeekStats.totalDistance)}`}>
+                  {getComparisonText(thisWeekStats.totalDistance, lastWeekStats.totalDistance)} vs last week
+                </p>
+              </div>
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-1">
+                  <span className="text-2xl font-bold text-purple-600">{Math.round(thisWeekStats.runningDuration)} min</span>
+                  {getComparisonIcon(thisWeekStats.runningDuration, lastWeekStats.runningDuration)}
+                </div>
+                <p className="text-sm text-gray-500">Running Time</p>
+                <p className={`text-xs ${getComparisonColor(thisWeekStats.runningDuration, lastWeekStats.runningDuration)}`}>
+                  {getComparisonText(thisWeekStats.runningDuration, lastWeekStats.runningDuration)} vs last week
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Trainings */}

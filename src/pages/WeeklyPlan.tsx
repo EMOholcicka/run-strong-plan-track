@@ -8,12 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
-import { TrainingProvider, useTraining, PlannedTraining } from "@/contexts/TrainingContext";
-import { Calendar, Plus, Clock, MapPin, Edit, Trash2, Check } from "lucide-react";
+import { TrainingProvider, useTraining, PlannedTraining, RunningCategory } from "@/contexts/TrainingContext";
+import { Calendar, Plus, Clock, MapPin, Edit, Trash2, Check, Activity, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getCategoryStyle, getCategoryDisplayName } from "@/utils/runningCategories";
 
 const WeeklyPlanContent = () => {
-  const { plannedTrainings, addPlannedTraining, updatePlannedTraining, deletePlannedTraining } = useTraining();
+  const { plannedTrainings, addPlannedTraining, updatePlannedTraining, deletePlannedTraining, getPlannedWeeklyStats } = useTraining();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -24,6 +25,7 @@ const WeeklyPlanContent = () => {
     date: '',
     plannedDuration: '',
     plannedDistance: '',
+    category: '' as RunningCategory | '',
     notes: ''
   });
 
@@ -45,6 +47,7 @@ const WeeklyPlanContent = () => {
 
   const weekDates = getCurrentWeekDates();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const plannedStats = getPlannedWeeklyStats();
 
   const getPlannedTrainingsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
@@ -62,6 +65,7 @@ const WeeklyPlanContent = () => {
       date: '',
       plannedDuration: '',
       plannedDistance: '',
+      category: '',
       notes: ''
     });
     setEditingId(null);
@@ -82,6 +86,7 @@ const WeeklyPlanContent = () => {
       date: training.date,
       plannedDuration: training.plannedDuration.toString(),
       plannedDistance: training.plannedDistance?.toString() || '',
+      category: training.category || '',
       notes: training.notes || ''
     });
     setEditingId(training.id);
@@ -106,6 +111,7 @@ const WeeklyPlanContent = () => {
       date: formData.date,
       plannedDuration: parseInt(formData.plannedDuration),
       ...(formData.plannedDistance && { plannedDistance: parseFloat(formData.plannedDistance) }),
+      ...(formData.category && { category: formData.category as RunningCategory }),
       ...(formData.notes && { notes: formData.notes })
     };
 
@@ -133,6 +139,41 @@ const WeeklyPlanContent = () => {
       title: "Training Completed!",
       description: "Great job on completing your planned training!",
     });
+  };
+
+  const getTrainingCardStyle = (training: PlannedTraining) => {
+    if (training.completed) {
+      return 'bg-green-50 border-green-200';
+    }
+    
+    if (training.type === 'running' && training.category) {
+      return getCategoryStyle(training.category).bgClass;
+    }
+    
+    return training.type === 'running' 
+      ? 'bg-blue-50 border-blue-200' 
+      : 'bg-purple-50 border-purple-200';
+  };
+
+  const getTrainingBadgeStyle = (training: PlannedTraining) => {
+    if (training.completed) {
+      return 'bg-green-100 text-green-800';
+    }
+    
+    if (training.type === 'running' && training.category) {
+      return getCategoryStyle(training.category).badgeClass;
+    }
+    
+    return training.type === 'running'
+      ? 'bg-blue-100 text-blue-800'
+      : 'bg-purple-100 text-purple-800';
+  };
+
+  const getTrainingTypeDisplay = (training: PlannedTraining) => {
+    if (training.type === 'running' && training.category) {
+      return getCategoryDisplayName(training.category);
+    }
+    return training.type;
   };
 
   return (
@@ -185,6 +226,23 @@ const WeeklyPlanContent = () => {
                     />
                   </div>
                 </div>
+
+                {formData.type === 'running' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Running Category</Label>
+                    <Select value={formData.category} onValueChange={(value: any) => handleInputChange('category', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="aerobic">Aerobic</SelectItem>
+                        <SelectItem value="intervals">Intervals</SelectItem>
+                        <SelectItem value="tempo">Tempo</SelectItem>
+                        <SelectItem value="hills">Hills</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 
                 <div className="space-y-2">
                   <Label htmlFor="title">Title *</Label>
@@ -248,8 +306,34 @@ const WeeklyPlanContent = () => {
           </Dialog>
         </div>
 
+        {/* Weekly Summary */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Target className="h-5 w-5 mr-2" />
+              Weekly Plan Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{Math.round(plannedStats.totalPlannedDuration)} min</p>
+                <p className="text-sm text-gray-500">Total Planned Time</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{plannedStats.totalPlannedDistance.toFixed(1)} km</p>
+                <p className="text-sm text-gray-500">Total Running Distance</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">{plannedTrainings.length}</p>
+                <p className="text-sm text-gray-500">Total Sessions</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Weekly Calendar */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-8">
           {weekDates.map((date, index) => {
             const dayTrainings = getPlannedTrainingsForDate(date);
             const isToday = date.toDateString() === new Date().toDateString();
@@ -272,23 +356,11 @@ const WeeklyPlanContent = () => {
                     dayTrainings.map((training) => (
                       <div
                         key={training.id}
-                        className={`p-3 rounded-lg border ${
-                          training.completed 
-                            ? 'bg-green-50 border-green-200' 
-                            : training.type === 'running' 
-                              ? 'bg-blue-50 border-blue-200' 
-                              : 'bg-purple-50 border-purple-200'
-                        }`}
+                        className={`p-3 rounded-lg border ${getTrainingCardStyle(training)}`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            training.completed
-                              ? 'bg-green-100 text-green-800'
-                              : training.type === 'running'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-purple-100 text-purple-800'
-                          }`}>
-                            {training.type}
+                          <span className={`text-xs px-2 py-1 rounded-full ${getTrainingBadgeStyle(training)}`}>
+                            {getTrainingTypeDisplay(training)}
                           </span>
                           
                           <div className="flex space-x-1">
@@ -363,11 +435,11 @@ const WeeklyPlanContent = () => {
         </div>
 
         {/* Week Summary */}
-        <Card className="mt-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="h-5 w-5 mr-2" />
-              Week Summary
+              Week Overview
             </CardTitle>
           </CardHeader>
           <CardContent>

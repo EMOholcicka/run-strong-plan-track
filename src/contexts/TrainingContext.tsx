@@ -1,6 +1,8 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+export type RunningCategory = 'aerobic' | 'intervals' | 'tempo' | 'hills';
+
 export interface Training {
   id: string;
   type: 'running' | 'strength';
@@ -9,6 +11,7 @@ export interface Training {
   duration: number; // in minutes
   distance?: number; // in kilometers for running
   pace?: string; // min/km for running
+  category?: RunningCategory; // for running only
   exercises?: Exercise[]; // for strength training
   notes?: string;
   calories?: number;
@@ -32,6 +35,7 @@ export interface PlannedTraining {
   title: string;
   plannedDuration: number;
   plannedDistance?: number;
+  category?: RunningCategory; // for running only
   notes?: string;
   completed?: boolean;
 }
@@ -44,6 +48,17 @@ interface TrainingContextType {
   updatePlannedTraining: (id: string, updates: Partial<PlannedTraining>) => void;
   deletePlannedTraining: (id: string) => void;
   getTrainingById: (id: string) => Training | undefined;
+  getWeeklyStats: (weekOffset?: number) => {
+    totalDuration: number;
+    totalDistance: number;
+    runningDuration: number;
+    strengthDuration: number;
+    totalSessions: number;
+  };
+  getPlannedWeeklyStats: () => {
+    totalPlannedDuration: number;
+    totalPlannedDistance: number;
+  };
 }
 
 const TrainingContext = createContext<TrainingContextType | undefined>(undefined);
@@ -66,6 +81,7 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       duration: 45,
       distance: 8.5,
       pace: '5:20',
+      category: 'aerobic',
       calories: 520,
       heartRate: { avg: 145, max: 162 },
       notes: 'Great morning run, felt strong throughout'
@@ -92,6 +108,7 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       duration: 35,
       distance: 6.0,
       pace: '4:45',
+      category: 'intervals',
       calories: 420,
       heartRate: { avg: 155, max: 178 },
       notes: '6x800m intervals with 2min recovery'
@@ -106,6 +123,7 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       title: 'Long Run',
       plannedDuration: 90,
       plannedDistance: 15,
+      category: 'aerobic',
       notes: 'Easy pace, focus on endurance'
     },
     {
@@ -150,6 +168,35 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
     return trainings.find(training => training.id === id);
   };
 
+  const getWeeklyStats = (weekOffset: number = 0) => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDay + (weekOffset * 7));
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    const weekTrainings = trainings.filter(training => {
+      const trainingDate = new Date(training.date);
+      return trainingDate >= startOfWeek && trainingDate <= endOfWeek;
+    });
+
+    return {
+      totalDuration: weekTrainings.reduce((sum, t) => sum + t.duration, 0),
+      totalDistance: weekTrainings.filter(t => t.type === 'running').reduce((sum, t) => sum + (t.distance || 0), 0),
+      runningDuration: weekTrainings.filter(t => t.type === 'running').reduce((sum, t) => sum + t.duration, 0),
+      strengthDuration: weekTrainings.filter(t => t.type === 'strength').reduce((sum, t) => sum + t.duration, 0),
+      totalSessions: weekTrainings.length
+    };
+  };
+
+  const getPlannedWeeklyStats = () => {
+    return {
+      totalPlannedDuration: plannedTrainings.reduce((sum, t) => sum + t.plannedDuration, 0),
+      totalPlannedDistance: plannedTrainings.filter(t => t.type === 'running').reduce((sum, t) => sum + (t.plannedDistance || 0), 0)
+    };
+  };
+
   return (
     <TrainingContext.Provider value={{
       trainings,
@@ -158,7 +205,9 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       addPlannedTraining,
       updatePlannedTraining,
       deletePlannedTraining,
-      getTrainingById
+      getTrainingById,
+      getWeeklyStats,
+      getPlannedWeeklyStats
     }}>
       {children}
     </TrainingContext.Provider>
