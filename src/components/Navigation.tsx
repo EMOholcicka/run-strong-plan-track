@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, List, Plus, Calendar, Activity } from "lucide-react";
+import { Home, List, Plus, Calendar, Activity, TrendingUp } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
@@ -11,6 +11,7 @@ const Navigation = () => {
     { path: "/trainings", label: "Trainings", icon: List },
     { path: "/add-training", label: "Add Training", icon: Plus },
     { path: "/weekly-plan", label: "Weekly Plan", icon: Calendar },
+    { path: "/micro-cycle", label: "Micro Cycle", icon: TrendingUp },
   ];
 
   return (

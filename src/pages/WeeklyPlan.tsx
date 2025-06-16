@@ -29,24 +29,43 @@ const WeeklyPlanContent = () => {
     notes: ''
   });
 
-  // Get current week dates
+  // Get current week dates starting with Monday
   const getCurrentWeekDates = () => {
     const today = new Date();
     const currentDay = today.getDay();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - currentDay);
+    const monday = new Date(today);
+    // Adjust to get Monday (1) as start of week
+    monday.setDate(today.getDate() - currentDay + 1);
     
     const weekDates = [];
     for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
       weekDates.push(date);
     }
     return weekDates;
   };
 
-  const weekDates = getCurrentWeekDates();
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Get previous week dates starting with Monday
+  const getPreviousWeekDates = () => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const lastMonday = new Date(today);
+    // Get last Monday
+    lastMonday.setDate(today.getDate() - currentDay + 1 - 7);
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(lastMonday);
+      date.setDate(lastMonday.getDate() + i);
+      weekDates.push(date);
+    }
+    return weekDates;
+  };
+
+  const currentWeekDates = getCurrentWeekDates();
+  const previousWeekDates = getPreviousWeekDates();
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const currentWeekStats = getPlannedWeeklyStats();
   const lastWeekStats = getPlannedWeeklyStatsForWeek(-1);
   const twoWeeksAgoStats = getPlannedWeeklyStatsForWeek(-2);
@@ -189,6 +208,99 @@ const WeeklyPlanContent = () => {
     const change = ((current - previous) / previous * 100).toFixed(0);
     return `${Number(change) >= 0 ? '+' : ''}${change}%`;
   };
+
+  const renderWeekCalendar = (weekDates: Date[], weekTitle: string, isPreviousWeek = false) => (
+    <div className="mb-8">
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">{weekTitle}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        {weekDates.map((date, index) => {
+          const dayTrainings = getPlannedTrainingsForDate(date);
+          const isToday = date.toDateString() === new Date().toDateString();
+          
+          return (
+            <Card key={index} className={`${isToday && !isPreviousWeek ? 'ring-2 ring-blue-500' : ''} ${isPreviousWeek ? 'bg-gray-50' : ''}`}>
+              <CardHeader className="pb-3">
+                <div className="text-center">
+                  <div className="text-sm font-medium text-gray-500">
+                    {dayNames[index]}
+                  </div>
+                  <div className={`text-2xl font-bold ${isToday && !isPreviousWeek ? 'text-blue-600' : 'text-gray-900'}`}>
+                    {date.getDate()}
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-2 min-h-[200px]">
+                {dayTrainings.length > 0 ? (
+                  dayTrainings.map((training) => (
+                    <div
+                      key={training.id}
+                      className={`p-3 rounded-lg border ${getTrainingCardStyle(training)}`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${getTrainingBadgeStyle(training)}`}>
+                          {getTrainingTypeDisplay(training)}
+                        </span>
+                        
+                        <div className="flex space-x-1">
+                          {!training.completed && !isPreviousWeek && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openEditDialog(training)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <div className="font-medium text-sm">{training.title}</div>
+                        
+                        <div className="flex items-center text-xs text-gray-600">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{training.plannedDuration} min</span>
+                        </div>
+                        
+                        {training.plannedDistance && (
+                          <div className="flex items-center text-xs text-gray-600">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            <span>{training.plannedDistance} km</span>
+                          </div>
+                        )}
+                        
+                        {training.notes && (
+                          <div className="text-xs text-gray-600 line-clamp-2">
+                            {training.notes}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  !isPreviousWeek && (
+                    <div className="text-center py-8">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openAddDialog(date)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Plan
+                      </Button>
+                    </div>
+                  )
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -370,110 +482,11 @@ const WeeklyPlanContent = () => {
           </CardContent>
         </Card>
 
-        {/* Weekly Calendar */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-8">
-          {weekDates.map((date, index) => {
-            const dayTrainings = getPlannedTrainingsForDate(date);
-            const isToday = date.toDateString() === new Date().toDateString();
-            
-            return (
-              <Card key={index} className={`${isToday ? 'ring-2 ring-blue-500' : ''}`}>
-                <CardHeader className="pb-3">
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-gray-500">
-                      {dayNames[index]}
-                    </div>
-                    <div className={`text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                      {date.getDate()}
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-2 min-h-[200px]">
-                  {dayTrainings.length > 0 ? (
-                    dayTrainings.map((training) => (
-                      <div
-                        key={training.id}
-                        className={`p-3 rounded-lg border ${getTrainingCardStyle(training)}`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${getTrainingBadgeStyle(training)}`}>
-                            {getTrainingTypeDisplay(training)}
-                          </span>
-                          
-                          <div className="flex space-x-1">
-                            {!training.completed && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => openEditDialog(training)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => markAsCompleted(training.id)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Check className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => deletePlannedTraining(training.id)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="font-medium text-sm">{training.title}</div>
-                          
-                          <div className="flex items-center text-xs text-gray-600">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span>{training.plannedDuration} min</span>
-                          </div>
-                          
-                          {training.plannedDistance && (
-                            <div className="flex items-center text-xs text-gray-600">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              <span>{training.plannedDistance} km</span>
-                            </div>
-                          )}
-                          
-                          {training.notes && (
-                            <div className="text-xs text-gray-600 line-clamp-2">
-                              {training.notes}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openAddDialog(date)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Plan
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {/* Previous Week Calendar */}
+        {renderWeekCalendar(previousWeekDates, "Previous Week", true)}
+
+        {/* Current Week Calendar */}
+        {renderWeekCalendar(currentWeekDates, "Current Week")}
 
         {/* Week Overview */}
         <Card>

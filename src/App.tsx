@@ -9,6 +9,7 @@ import Trainings from "./pages/Trainings";
 import TrainingDetail from "./pages/TrainingDetail";
 import AddTraining from "./pages/AddTraining";
 import WeeklyPlan from "./pages/WeeklyPlan";
+import MicroCycle from "./pages/MicroCycle";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/training/:id" element={<TrainingDetail />} />
           <Route path="/add-training" element={<AddTraining />} />
           <Route path="/weekly-plan" element={<WeeklyPlan />} />
+          <Route path="/micro-cycle" element={<MicroCycle />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
