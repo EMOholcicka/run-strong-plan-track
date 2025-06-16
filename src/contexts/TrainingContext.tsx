@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type RunningCategory = 'aerobic' | 'intervals' | 'tempo' | 'hills';
@@ -58,6 +57,11 @@ interface TrainingContextType {
   getPlannedWeeklyStats: () => {
     totalPlannedDuration: number;
     totalPlannedDistance: number;
+  };
+  getPlannedWeeklyStatsForWeek: (weekOffset: number) => {
+    totalPlannedDuration: number;
+    totalPlannedDistance: number;
+    totalSessions: number;
   };
 }
 
@@ -197,6 +201,26 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
+  const getPlannedWeeklyStatsForWeek = (weekOffset: number) => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - currentDay + (weekOffset * 7));
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    const weekPlannedTrainings = plannedTrainings.filter(training => {
+      const trainingDate = new Date(training.date);
+      return trainingDate >= startOfWeek && trainingDate <= endOfWeek;
+    });
+
+    return {
+      totalPlannedDuration: weekPlannedTrainings.reduce((sum, t) => sum + t.plannedDuration, 0),
+      totalPlannedDistance: weekPlannedTrainings.filter(t => t.type === 'running').reduce((sum, t) => sum + (t.plannedDistance || 0), 0),
+      totalSessions: weekPlannedTrainings.length
+    };
+  };
+
   return (
     <TrainingContext.Provider value={{
       trainings,
@@ -207,7 +231,8 @@ export const TrainingProvider = ({ children }: { children: ReactNode }) => {
       deletePlannedTraining,
       getTrainingById,
       getWeeklyStats,
-      getPlannedWeeklyStats
+      getPlannedWeeklyStats,
+      getPlannedWeeklyStatsForWeek
     }}>
       {children}
     </TrainingContext.Provider>

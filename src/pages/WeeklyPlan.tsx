@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,12 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
 import { TrainingProvider, useTraining, PlannedTraining, RunningCategory } from "@/contexts/TrainingContext";
-import { Calendar, Plus, Clock, MapPin, Edit, Trash2, Check, Activity, Target } from "lucide-react";
+import { Calendar, Plus, Clock, MapPin, Edit, Trash2, Check, Activity, Target, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getCategoryStyle, getCategoryDisplayName } from "@/utils/runningCategories";
 
 const WeeklyPlanContent = () => {
-  const { plannedTrainings, addPlannedTraining, updatePlannedTraining, deletePlannedTraining, getPlannedWeeklyStats } = useTraining();
+  const { plannedTrainings, addPlannedTraining, updatePlannedTraining, deletePlannedTraining, getPlannedWeeklyStats, getPlannedWeeklyStatsForWeek } = useTraining();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -47,7 +46,9 @@ const WeeklyPlanContent = () => {
 
   const weekDates = getCurrentWeekDates();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const plannedStats = getPlannedWeeklyStats();
+  const currentWeekStats = getPlannedWeeklyStats();
+  const lastWeekStats = getPlannedWeeklyStatsForWeek(-1);
+  const twoWeeksAgoStats = getPlannedWeeklyStatsForWeek(-2);
 
   const getPlannedTrainingsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
@@ -174,6 +175,18 @@ const WeeklyPlanContent = () => {
       return getCategoryDisplayName(training.category);
     }
     return training.type;
+  };
+
+  const getComparisonIcon = (current: number, previous: number) => {
+    if (current > previous) return <TrendingUp className="h-4 w-4 text-green-600" />;
+    if (current < previous) return <TrendingDown className="h-4 w-4 text-red-600" />;
+    return null;
+  };
+
+  const getComparisonText = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? '+100%' : '0%';
+    const change = ((current - previous) / previous * 100).toFixed(0);
+    return `${change >= 0 ? '+' : ''}${change}%`;
   };
 
   return (
@@ -306,27 +319,51 @@ const WeeklyPlanContent = () => {
           </Dialog>
         </div>
 
-        {/* Weekly Summary */}
+        {/* Weekly Summary with 2-week comparison */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Target className="h-5 w-5 mr-2" />
-              Weekly Plan Summary
+              Weekly Plan Summary - 3 Week Comparison
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{Math.round(plannedStats.totalPlannedDuration)} min</p>
-                <p className="text-sm text-gray-500">Total Planned Time</p>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <p className="text-2xl font-bold text-blue-600">{Math.round(currentWeekStats.totalPlannedDuration)} min</p>
+                  {getComparisonIcon(currentWeekStats.totalPlannedDuration, lastWeekStats.totalPlannedDuration)}
+                </div>
+                <p className="text-sm text-gray-500 mb-1">Total Planned Time</p>
+                <div className="text-xs text-gray-400">
+                  <span>vs last week: {getComparisonText(currentWeekStats.totalPlannedDuration, lastWeekStats.totalPlannedDuration)}</span>
+                  <br />
+                  <span>vs 2 weeks ago: {getComparisonText(currentWeekStats.totalPlannedDuration, twoWeeksAgoStats.totalPlannedDuration)}</span>
+                </div>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">{plannedStats.totalPlannedDistance.toFixed(1)} km</p>
-                <p className="text-sm text-gray-500">Total Running Distance</p>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <p className="text-2xl font-bold text-green-600">{currentWeekStats.totalPlannedDistance.toFixed(1)} km</p>
+                  {getComparisonIcon(currentWeekStats.totalPlannedDistance, lastWeekStats.totalPlannedDistance)}
+                </div>
+                <p className="text-sm text-gray-500 mb-1">Total Running Distance</p>
+                <div className="text-xs text-gray-400">
+                  <span>vs last week: {getComparisonText(currentWeekStats.totalPlannedDistance, lastWeekStats.totalPlannedDistance)}</span>
+                  <br />
+                  <span>vs 2 weeks ago: {getComparisonText(currentWeekStats.totalPlannedDistance, twoWeeksAgoStats.totalPlannedDistance)}</span>
+                </div>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">{plannedTrainings.length}</p>
-                <p className="text-sm text-gray-500">Total Sessions</p>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <p className="text-2xl font-bold text-purple-600">{plannedTrainings.length}</p>
+                  {getComparisonIcon(plannedTrainings.length, lastWeekStats.totalSessions)}
+                </div>
+                <p className="text-sm text-gray-500 mb-1">Total Sessions</p>
+                <div className="text-xs text-gray-400">
+                  <span>vs last week: {getComparisonText(plannedTrainings.length, lastWeekStats.totalSessions)}</span>
+                  <br />
+                  <span>vs 2 weeks ago: {getComparisonText(plannedTrainings.length, twoWeeksAgoStats.totalSessions)}</span>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -356,14 +393,14 @@ const WeeklyPlanContent = () => {
                     dayTrainings.map((training) => (
                       <div
                         key={training.id}
-                        className={`p-3 rounded-lg border ${getTrainingCardStyle(training)} overflow-hidden`}
+                        className={`p-3 rounded-lg border ${getTrainingCardStyle(training)}`}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${getTrainingBadgeStyle(training)}`}>
+                          <span className={`text-xs px-2 py-1 rounded-full ${getTrainingBadgeStyle(training)}`}>
                             {getTrainingTypeDisplay(training)}
                           </span>
                           
-                          <div className="flex space-x-1 flex-shrink-0 ml-2">
+                          <div className="flex space-x-1">
                             {!training.completed && (
                               <>
                                 <Button
@@ -395,24 +432,27 @@ const WeeklyPlanContent = () => {
                           </div>
                         </div>
                         
-                        <h4 className="font-medium text-sm mb-2 break-words">{training.title}</h4>
-                        
-                        <div className="flex items-center text-xs text-gray-600 space-x-2 mb-2">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          <span>{training.plannedDuration}min</span>
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-sm">{training.title}</h4>
+                          
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span>{training.plannedDuration} min</span>
+                          </div>
+                          
                           {training.plannedDistance && (
-                            <>
-                              <MapPin className="h-3 w-3 flex-shrink-0" />
-                              <span>{training.plannedDistance}km</span>
-                            </>
+                            <div className="flex items-center text-xs text-gray-600">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              <span>{training.plannedDistance} km</span>
+                            </div>
+                          )}
+                          
+                          {training.notes && (
+                            <p className="text-xs text-gray-600 line-clamp-2">
+                              {training.notes}
+                            </p>
                           )}
                         </div>
-                        
-                        {training.notes && (
-                          <p className="text-xs text-gray-600 break-words line-clamp-2">
-                            {training.notes}
-                          </p>
-                        )}
                       </div>
                     ))
                   ) : (
@@ -434,7 +474,7 @@ const WeeklyPlanContent = () => {
           })}
         </div>
 
-        {/* Week Summary */}
+        {/* Week Overview */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
