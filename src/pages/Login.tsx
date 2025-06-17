@@ -6,38 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Activity, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { login, isLoading } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Hardcoded authentication
-    if (username === "Radek" && password === "Radek") {
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("username", "Radek");
-      toast({
-        title: "Login successful",
-        description: "Welcome back, Radek!",
-      });
+    try {
+      await login({ username, password });
       navigate("/");
-    } else {
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
+    } catch (error) {
+      // Error handling is done in the useAuth hook
     }
-    
-    setIsLoading(false);
   };
 
   return (
