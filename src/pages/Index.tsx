@@ -1,8 +1,8 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
+import TodayTraining from "@/components/TodayTraining";
 import { TrainingProvider, useTraining } from "@/contexts/TrainingContext";
 import { Activity, Calendar, Clock, TrendingUp, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
@@ -56,6 +56,11 @@ const DashboardContent = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
           <p className="text-gray-600">Track your fitness journey</p>
+        </div>
+
+        {/* Today's Training - Mobile Priority */}
+        <div className="mb-8 lg:hidden">
+          <TodayTraining />
         </div>
 
         {/* Stats Cards */}

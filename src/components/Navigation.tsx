@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, List, Plus, Calendar, Activity, TrendingUp } from "lucide-react";
+import { Home, List, Plus, Calendar, Activity, TrendingUp, User } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
@@ -23,24 +23,35 @@ const Navigation = () => {
             <span className="text-xl font-bold text-gray-900">FitTracker</span>
           </div>
           
-          <div className="flex space-x-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
-              return (
-                <Link key={item.path} to={item.path}>
-                  <Button
-                    variant={isActive ? "default" : "ghost"}
-                    size="sm"
-                    className="flex items-center space-x-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Button>
-                </Link>
-              );
-            })}
+          <div className="flex items-center space-x-1">
+            <div className="flex space-x-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                return (
+                  <Link key={item.path} to={item.path}>
+                    <Button
+                      variant={isActive ? "default" : "ghost"}
+                      size="sm"
+                      className="flex items-center space-x-2"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{item.label}</span>
+                    </Button>
+                  </Link>
+                );
+              })}
+            </div>
+            
+            <div className="ml-4">
+              <Link to="/profile">
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Profile</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

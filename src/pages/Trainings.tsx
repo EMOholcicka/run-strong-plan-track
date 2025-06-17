@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +46,7 @@ const TrainingsContent = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrainings.map((training) => (
-            <Card key={training.id} className="hover:shadow-lg transition-shadow cursor-pointer group">
+            <Card key={training.id} className="hover:shadow-lg transition-shadow cursor-pointer group flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className={`p-2 rounded-full ${training.type === 'running' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
@@ -64,8 +63,8 @@ const TrainingsContent = () => {
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="flex flex-col flex-grow">
+                <div className="grid grid-cols-2 gap-4 mb-3">
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-gray-400" />
                     <span className="text-sm">{training.duration} min</span>
@@ -93,16 +92,20 @@ const TrainingsContent = () => {
                   )}
                 </div>
                 
-                {training.notes && (
-                  <p className="text-sm text-gray-600 line-clamp-2">{training.notes}</p>
-                )}
+                <div className="flex-grow">
+                  {training.notes && (
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">{training.notes}</p>
+                  )}
+                </div>
                 
-                <Link to={`/training/${training.id}`}>
-                  <Button variant="outline" size="sm" className="w-full group-hover:bg-blue-50 group-hover:border-blue-200">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                </Link>
+                <div className="mt-auto">
+                  <Link to={`/training/${training.id}`}>
+                    <Button variant="outline" size="sm" className="w-full group-hover:bg-blue-50 group-hover:border-blue-200">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           ))}
