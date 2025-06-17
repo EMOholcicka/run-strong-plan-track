@@ -1,18 +1,21 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, LoginRequest, UserProfile } from '@/services/authService';
+import { authService, LoginRequest, SignUpRequest, UserProfile } from '@/services/authService';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { User, Session } from '@supabase/supabase-js';
 
-interface User {
+interface AuthUser {
   id: string;
-  username: string;
   email: string;
   profile: UserProfile;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
+  session: Session | null;
   login: (credentials: LoginRequest) => Promise<void>;
+  signUp: (credentials: SignUpRequest) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   isLoading: boolean;
@@ -30,27 +33,55 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = authService.getCurrentUser();
-    if (currentUser && authService.isAuthenticated()) {
-      setUser(currentUser);
-    }
-    setIsLoading(false);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state change:', event, session);
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch user profile when user logs in
+          setTimeout(async () => {
+            try {
+              const currentUser = await authService.getCurrentUser();
+              setUser(currentUser);
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+            }
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        authService.getCurrentUser().then(setUser).catch(console.error);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (credentials: LoginRequest) => {
     try {
       setIsLoading(true);
       const response = await authService.login(credentials);
-      setUser(response.user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${response.user.username}!`,
+        description: `Welcome back, ${response.user.profile.firstName || response.user.email}!`,
       });
     } catch (error) {
       toast({
@@ -64,16 +95,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signUp = async (credentials: SignUpRequest) => {
+    try {
+      setIsLoading(true);
+      const response = await authService.signUp(credentials);
+      toast({
+        title: "Account created",
+        description: "Please check your email to verify your account.",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign up failed",
+        description: error instanceof Error ? error.message : "Failed to create account",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       await authService.logout();
       setUser(null);
+      setSession(null);
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
     } catch (error) {
       console.error('Logout error:', error);
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -81,12 +138,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     
     try {
+      await authService.updateProfile(profileUpdates);
+      
       const updatedUser = {
         ...user,
         profile: { ...user.profile, ...profileUpdates }
       };
       setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
       
       toast({
         title: "Profile updated",
@@ -98,17 +156,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
+      throw error;
     }
   };
 
   return (
     <AuthContext.Provider value={{
       user,
+      session,
       login,
+      signUp,
       logout,
       updateProfile,
       isLoading,
-      isAuthenticated: !!user
+      isAuthenticated: !!session?.user
     }}>
       {children}
     </AuthContext.Provider>

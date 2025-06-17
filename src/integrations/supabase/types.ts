@@ -9,7 +9,193 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      exercises: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          reps: number
+          sets: number
+          training_id: string
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          reps: number
+          sets: number
+          training_id: string
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          reps?: number
+          sets?: number
+          training_id?: string
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_training_id_fkey"
+            columns: ["training_id"]
+            isOneToOne: false
+            referencedRelation: "trainings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planned_trainings: {
+        Row: {
+          completed: boolean | null
+          completed_training_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          planned_date: string
+          planned_distance: number | null
+          planned_duration: number | null
+          title: string
+          type: Database["public"]["Enums"]["training_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_training_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          planned_date: string
+          planned_distance?: number | null
+          planned_duration?: number | null
+          title: string
+          type: Database["public"]["Enums"]["training_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_training_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          planned_date?: string
+          planned_distance?: number | null
+          planned_duration?: number | null
+          title?: string
+          type?: Database["public"]["Enums"]["training_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planned_trainings_completed_training_id_fkey"
+            columns: ["completed_training_id"]
+            isOneToOne: false
+            referencedRelation: "trainings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          activity_level: Database["public"]["Enums"]["activity_level"] | null
+          created_at: string | null
+          date_of_birth: string | null
+          first_name: string | null
+          goals: string | null
+          height: number | null
+          id: string
+          last_name: string | null
+          strava_connected: boolean | null
+          strava_user_id: string | null
+          updated_at: string | null
+          weight: number | null
+        }
+        Insert: {
+          activity_level?: Database["public"]["Enums"]["activity_level"] | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          first_name?: string | null
+          goals?: string | null
+          height?: number | null
+          id: string
+          last_name?: string | null
+          strava_connected?: boolean | null
+          strava_user_id?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Update: {
+          activity_level?: Database["public"]["Enums"]["activity_level"] | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          first_name?: string | null
+          goals?: string | null
+          height?: number | null
+          id?: string
+          last_name?: string | null
+          strava_connected?: boolean | null
+          strava_user_id?: string | null
+          updated_at?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      trainings: {
+        Row: {
+          calories: number | null
+          created_at: string | null
+          date: string
+          distance: number | null
+          duration: number
+          heart_rate_avg: number | null
+          heart_rate_max: number | null
+          id: string
+          notes: string | null
+          pace: string | null
+          title: string
+          type: Database["public"]["Enums"]["training_type"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          calories?: number | null
+          created_at?: string | null
+          date: string
+          distance?: number | null
+          duration: number
+          heart_rate_avg?: number | null
+          heart_rate_max?: number | null
+          id?: string
+          notes?: string | null
+          pace?: string | null
+          title: string
+          type: Database["public"]["Enums"]["training_type"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          calories?: number | null
+          created_at?: string | null
+          date?: string
+          distance?: number | null
+          duration?: number
+          heart_rate_avg?: number | null
+          heart_rate_max?: number | null
+          id?: string
+          notes?: string | null
+          pace?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["training_type"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +204,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      activity_level: "beginner" | "intermediate" | "advanced" | "elite"
+      training_type:
+        | "running"
+        | "cycling"
+        | "swimming"
+        | "strength"
+        | "yoga"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +326,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      activity_level: ["beginner", "intermediate", "advanced", "elite"],
+      training_type: [
+        "running",
+        "cycling",
+        "swimming",
+        "strength",
+        "yoga",
+        "other",
+      ],
+    },
   },
 } as const
