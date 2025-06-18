@@ -2,15 +2,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useTraining } from "@/contexts/TrainingContext";
+import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
 import { Calendar, Plus, Activity, Clock, MapPin } from "lucide-react";
 
 const TodayTraining = () => {
-  const { trainings, plannedTrainings } = useTraining();
+  const { data: trainings = [] } = useTrainings();
+  const { data: plannedTrainings = [] } = usePlannedTrainings();
   
   const today = new Date().toISOString().split('T')[0];
   const todayTraining = trainings.find(t => t.date === today);
-  const todayPlanned = plannedTrainings.find(p => p.date === today);
+  const todayPlanned = plannedTrainings.find(p => p.plannedDate === today);
   
   if (todayTraining) {
     return (
