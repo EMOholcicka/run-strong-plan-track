@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trainingService } from '@/services/trainingService';
-import { Training, PlannedTraining } from '@/contexts/TrainingContext';
+import { Training, PlannedTraining } from '@/types/training';
 import { useToast } from '@/hooks/use-toast';
 
 // Query Keys

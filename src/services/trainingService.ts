@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Training, PlannedTraining } from '@/contexts/TrainingContext';
+import { Training, PlannedTraining, TrainingType, Exercise } from '@/types/training';
 
 export class TrainingService {
   async getTrainings(): Promise<Training[]> {
@@ -19,29 +19,30 @@ export class TrainingService {
 
     return trainings?.map(training => ({
       id: training.id,
-      type: training.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
+      userId: training.user_id,
       title: training.title,
+      type: training.type as TrainingType,
       date: training.date,
       duration: training.duration,
       distance: training.distance || undefined,
       pace: training.pace || undefined,
-      category: training.type === 'running' ? 'aerobic' : undefined,
       calories: training.calories || undefined,
-      heartRate: training.heart_rate_avg && training.heart_rate_max ? {
-        avg: training.heart_rate_avg,
-        max: training.heart_rate_max
-      } : undefined,
       notes: training.notes || undefined,
+      heartRateAvg: training.heart_rate_avg || undefined,
+      heartRateMax: training.heart_rate_max || undefined,
       exercises: training.exercises?.map((exercise: any) => ({
+        id: exercise.id,
         name: exercise.name,
         sets: exercise.sets,
         reps: exercise.reps,
-        weight: exercise.weight || undefined
-      })) || undefined
+        weight: exercise.weight || undefined,
+      })) || [],
+      createdAt: training.created_at,
+      updatedAt: training.updated_at,
     })) || [];
   }
 
-  async getTrainingById(id: string): Promise<Training | null> {
+  async getTrainingById(id: string): Promise<Training> {
     const { data: training, error } = await supabase
       .from('trainings')
       .select(`
@@ -53,56 +54,59 @@ export class TrainingService {
 
     if (error) {
       console.error('Error fetching training:', error);
-      return null;
+      throw error;
     }
 
-    if (!training) return null;
+    if (!training) {
+      throw new Error('Training not found');
+    }
 
     return {
       id: training.id,
-      type: training.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
+      userId: training.user_id,
       title: training.title,
+      type: training.type as TrainingType,
       date: training.date,
       duration: training.duration,
       distance: training.distance || undefined,
       pace: training.pace || undefined,
-      category: training.type === 'running' ? 'aerobic' : undefined,
       calories: training.calories || undefined,
-      heartRate: training.heart_rate_avg && training.heart_rate_max ? {
-        avg: training.heart_rate_avg,
-        max: training.heart_rate_max
-      } : undefined,
       notes: training.notes || undefined,
+      heartRateAvg: training.heart_rate_avg || undefined,
+      heartRateMax: training.heart_rate_max || undefined,
       exercises: training.exercises?.map((exercise: any) => ({
+        id: exercise.id,
         name: exercise.name,
         sets: exercise.sets,
         reps: exercise.reps,
-        weight: exercise.weight || undefined
-      })) || undefined
+        weight: exercise.weight || undefined,
+      })) || [],
+      createdAt: training.created_at,
+      updatedAt: training.updated_at,
     };
   }
 
-  async createTraining(training: Omit<Training, 'id'>): Promise<Training> {
+  async createTraining(trainingData: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>): Promise<Training> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       throw new Error('User must be authenticated to create training');
     }
 
-    const { data: newTraining, error } = await supabase
+    const { data: training, error } = await supabase
       .from('trainings')
       .insert({
         user_id: user.id,
-        title: training.title,
-        type: training.type,
-        date: training.date,
-        duration: training.duration,
-        distance: training.distance || null,
-        pace: training.pace || null,
-        calories: training.calories || null,
-        notes: training.notes || null,
-        heart_rate_avg: training.heartRate?.avg || null,
-        heart_rate_max: training.heartRate?.max || null
+        title: trainingData.title,
+        type: trainingData.type,
+        date: trainingData.date,
+        duration: trainingData.duration,
+        distance: trainingData.distance,
+        pace: trainingData.pace,
+        calories: trainingData.calories,
+        notes: trainingData.notes,
+        heart_rate_avg: trainingData.heartRateAvg,
+        heart_rate_max: trainingData.heartRateMax,
       })
       .select()
       .single();
@@ -112,17 +116,17 @@ export class TrainingService {
       throw error;
     }
 
-    // If there are exercises, insert them
-    if (training.exercises && training.exercises.length > 0) {
+    // If there are exercises, create them
+    if (trainingData.exercises && trainingData.exercises.length > 0) {
       const { error: exercisesError } = await supabase
         .from('exercises')
         .insert(
-          training.exercises.map(exercise => ({
-            training_id: newTraining.id,
+          trainingData.exercises.map(exercise => ({
+            training_id: training.id,
             name: exercise.name,
             sets: exercise.sets,
             reps: exercise.reps,
-            weight: exercise.weight || null
+            weight: exercise.weight,
           }))
         );
 
@@ -132,40 +136,24 @@ export class TrainingService {
       }
     }
 
-    return {
-      id: newTraining.id,
-      type: newTraining.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
-      title: newTraining.title,
-      date: newTraining.date,
-      duration: newTraining.duration,
-      distance: newTraining.distance || undefined,
-      pace: newTraining.pace || undefined,
-      category: newTraining.type === 'running' ? 'aerobic' : undefined,
-      calories: newTraining.calories || undefined,
-      heartRate: newTraining.heart_rate_avg && newTraining.heart_rate_max ? {
-        avg: newTraining.heart_rate_avg,
-        max: newTraining.heart_rate_max
-      } : undefined,
-      notes: newTraining.notes || undefined,
-      exercises: training.exercises
-    };
+    return this.getTrainingById(training.id);
   }
 
   async updateTraining(id: string, updates: Partial<Training>): Promise<Training> {
-    const { data: updatedTraining, error } = await supabase
+    const { data: training, error } = await supabase
       .from('trainings')
       .update({
         title: updates.title,
         type: updates.type,
         date: updates.date,
         duration: updates.duration,
-        distance: updates.distance || null,
-        pace: updates.pace || null,
-        calories: updates.calories || null,
-        notes: updates.notes || null,
-        heart_rate_avg: updates.heartRate?.avg || null,
-        heart_rate_max: updates.heartRate?.max || null,
-        updated_at: new Date().toISOString()
+        distance: updates.distance,
+        pace: updates.pace,
+        calories: updates.calories,
+        notes: updates.notes,
+        heart_rate_avg: updates.heartRateAvg,
+        heart_rate_max: updates.heartRateMax,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select()
@@ -176,52 +164,7 @@ export class TrainingService {
       throw error;
     }
 
-    // Handle exercises updates if provided
-    if (updates.exercises) {
-      // Delete existing exercises
-      await supabase
-        .from('exercises')
-        .delete()
-        .eq('training_id', id);
-
-      // Insert new exercises
-      if (updates.exercises.length > 0) {
-        const { error: exercisesError } = await supabase
-          .from('exercises')
-          .insert(
-            updates.exercises.map(exercise => ({
-              training_id: id,
-              name: exercise.name,
-              sets: exercise.sets,
-              reps: exercise.reps,
-              weight: exercise.weight || null
-            }))
-          );
-
-        if (exercisesError) {
-          console.error('Error updating exercises:', exercisesError);
-          throw exercisesError;
-        }
-      }
-    }
-
-    return {
-      id: updatedTraining.id,
-      type: updatedTraining.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
-      title: updatedTraining.title,
-      date: updatedTraining.date,
-      duration: updatedTraining.duration,
-      distance: updatedTraining.distance || undefined,
-      pace: updatedTraining.pace || undefined,
-      category: updatedTraining.type === 'running' ? 'aerobic' : undefined,
-      calories: updatedTraining.calories || undefined,
-      heartRate: updatedTraining.heart_rate_avg && updatedTraining.heart_rate_max ? {
-        avg: updatedTraining.heart_rate_avg,
-        max: updatedTraining.heart_rate_max
-      } : undefined,
-      notes: updatedTraining.notes || undefined,
-      exercises: updates.exercises
-    };
+    return this.getTrainingById(id);
   }
 
   async deleteTraining(id: string): Promise<void> {
@@ -247,39 +190,41 @@ export class TrainingService {
       throw error;
     }
 
-    return plannedTrainings?.map(training => ({
-      id: training.id,
-      date: training.planned_date,
-      type: training.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
-      title: training.title,
-      plannedDuration: training.planned_duration || undefined,
-      plannedDistance: training.planned_distance || undefined,
-      category: training.type === 'running' ? 'aerobic' : undefined,
-      notes: training.notes || undefined,
-      completed: training.completed || false,
-      completedTrainingId: training.completed_training_id || undefined
+    return plannedTrainings?.map(planned => ({
+      id: planned.id,
+      userId: planned.user_id,
+      title: planned.title,
+      type: planned.type as TrainingType,
+      plannedDate: planned.planned_date,
+      plannedDuration: planned.planned_duration || undefined,
+      plannedDistance: planned.planned_distance || undefined,
+      notes: planned.notes || undefined,
+      completed: planned.completed || false,
+      completedTrainingId: planned.completed_training_id || undefined,
+      createdAt: planned.created_at,
+      updatedAt: planned.updated_at,
     })) || [];
   }
 
-  async createPlannedTraining(training: Omit<PlannedTraining, 'id'>): Promise<PlannedTraining> {
+  async createPlannedTraining(plannedData: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'>): Promise<PlannedTraining> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
       throw new Error('User must be authenticated to create planned training');
     }
 
-    const { data: newPlannedTraining, error } = await supabase
+    const { data: planned, error } = await supabase
       .from('planned_trainings')
       .insert({
         user_id: user.id,
-        title: training.title,
-        type: training.type,
-        planned_date: training.date,
-        planned_duration: training.plannedDuration || null,
-        planned_distance: training.plannedDistance || null,
-        notes: training.notes || null,
-        completed: training.completed || false,
-        completed_training_id: training.completedTrainingId || null
+        title: plannedData.title,
+        type: plannedData.type,
+        planned_date: plannedData.plannedDate,
+        planned_duration: plannedData.plannedDuration,
+        planned_distance: plannedData.plannedDistance,
+        notes: plannedData.notes,
+        completed: plannedData.completed,
+        completed_training_id: plannedData.completedTrainingId,
       })
       .select()
       .single();
@@ -290,32 +235,34 @@ export class TrainingService {
     }
 
     return {
-      id: newPlannedTraining.id,
-      date: newPlannedTraining.planned_date,
-      type: newPlannedTraining.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
-      title: newPlannedTraining.title,
-      plannedDuration: newPlannedTraining.planned_duration || undefined,
-      plannedDistance: newPlannedTraining.planned_distance || undefined,
-      category: newPlannedTraining.type === 'running' ? 'aerobic' : undefined,
-      notes: newPlannedTraining.notes || undefined,
-      completed: newPlannedTraining.completed || false,
-      completedTrainingId: newPlannedTraining.completed_training_id || undefined
+      id: planned.id,
+      userId: planned.user_id,
+      title: planned.title,
+      type: planned.type as TrainingType,
+      plannedDate: planned.planned_date,
+      plannedDuration: planned.planned_duration || undefined,
+      plannedDistance: planned.planned_distance || undefined,
+      notes: planned.notes || undefined,
+      completed: planned.completed || false,
+      completedTrainingId: planned.completed_training_id || undefined,
+      createdAt: planned.created_at,
+      updatedAt: planned.updated_at,
     };
   }
 
   async updatePlannedTraining(id: string, updates: Partial<PlannedTraining>): Promise<PlannedTraining> {
-    const { data: updatedPlannedTraining, error } = await supabase
+    const { data: planned, error } = await supabase
       .from('planned_trainings')
       .update({
         title: updates.title,
         type: updates.type,
-        planned_date: updates.date,
-        planned_duration: updates.plannedDuration || null,
-        planned_distance: updates.plannedDistance || null,
-        notes: updates.notes || null,
+        planned_date: updates.plannedDate,
+        planned_duration: updates.plannedDuration,
+        planned_distance: updates.plannedDistance,
+        notes: updates.notes,
         completed: updates.completed,
-        completed_training_id: updates.completedTrainingId || null,
-        updated_at: new Date().toISOString()
+        completed_training_id: updates.completedTrainingId,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select()
@@ -327,16 +274,18 @@ export class TrainingService {
     }
 
     return {
-      id: updatedPlannedTraining.id,
-      date: updatedPlannedTraining.planned_date,
-      type: updatedPlannedTraining.type as 'running' | 'strength' | 'cycling' | 'swimming' | 'yoga' | 'other',
-      title: updatedPlannedTraining.title,
-      plannedDuration: updatedPlannedTraining.planned_duration || undefined,
-      plannedDistance: updatedPlannedTraining.planned_distance || undefined,
-      category: updatedPlannedTraining.type === 'running' ? 'aerobic' : undefined,
-      notes: updatedPlannedTraining.notes || undefined,
-      completed: updatedPlannedTraining.completed || false,
-      completedTrainingId: updatedPlannedTraining.completed_training_id || undefined
+      id: planned.id,
+      userId: planned.user_id,
+      title: planned.title,
+      type: planned.type as TrainingType,
+      plannedDate: planned.planned_date,
+      plannedDuration: planned.planned_duration || undefined,
+      plannedDistance: planned.planned_distance || undefined,
+      notes: planned.notes || undefined,
+      completed: planned.completed || false,
+      completedTrainingId: planned.completed_training_id || undefined,
+      createdAt: planned.created_at,
+      updatedAt: planned.updated_at,
     };
   }
 
