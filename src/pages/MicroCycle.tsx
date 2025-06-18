@@ -30,12 +30,22 @@ const MicroCycleContent = () => {
     };
   };
 
-  const weeks = [
+  // Desktop order: 3 weeks ago to next week
+  const desktopWeeks = [
     getWeekData(-3), // 3 weeks ago
     getWeekData(-2), // 2 weeks ago
     getWeekData(-1), // Last week
     getWeekData(0),  // Current week
     getWeekData(1)   // Next week
+  ];
+
+  // Mobile order: Current week first, then next week, then previous weeks
+  const mobileWeeks = [
+    getWeekData(0),  // Current week
+    getWeekData(1),  // Next week
+    getWeekData(-1), // Previous week
+    getWeekData(-2), // 2 weeks ago
+    getWeekData(-3)  // 3 weeks ago
   ];
 
   const formatDateRange = (start: Date, end: Date) => {
@@ -59,6 +69,116 @@ const MicroCycleContent = () => {
     return "bg-gray-50";
   };
 
+  const WeekCard = ({ week, index }: { week: any; index: number }) => (
+    <Card key={index} className={getCardStyle(week.weekOffset)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium text-center">
+          {getWeekLabel(week.weekOffset)}
+        </CardTitle>
+        <p className="text-xs text-gray-500 text-center">
+          {formatDateRange(week.weekStart, week.weekEnd)}
+        </p>
+      </CardHeader>
+      
+      <CardContent className="space-y-3">
+        {/* Running Stats */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Activity className="h-3 w-3 text-blue-600" />
+              <span className="text-xs text-gray-600">Running</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 
+                ? week.actualStats.totalSessions - week.actualStats.strengthDuration / 60
+                : Math.round(week.plannedStats.totalSessions * 0.7) // Estimate for future weeks
+              }
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <MapPin className="h-3 w-3 text-blue-600" />
+              <span className="text-xs text-gray-600">Distance</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 
+                ? `${week.actualStats.totalDistance.toFixed(1)} km`
+                : `${week.plannedStats.totalPlannedDistance.toFixed(1)} km`
+              }
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Clock className="h-3 w-3 text-blue-600" />
+              <span className="text-xs text-gray-600">Duration</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 
+                ? `${week.actualStats.runningDuration} min`
+                : `${Math.round(week.plannedStats.totalPlannedDuration * 0.7)} min`
+              }
+            </span>
+          </div>
+        </div>
+
+        <div className="border-t pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Dumbbell className="h-3 w-3 text-purple-600" />
+              <span className="text-xs text-gray-600">Strength</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 
+                ? Math.round(week.actualStats.strengthDuration / 60)
+                : Math.round(week.plannedStats.totalSessions * 0.3)
+              }
+            </span>
+          </div>
+        </div>
+
+        <div className="border-t pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Flame className="h-3 w-3 text-orange-600" />
+              <span className="text-xs text-gray-600">Load</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 
+                ? Math.round(week.actualStats.totalDuration * 2.5) // Estimated Garmin load
+                : Math.round(week.plannedStats.totalPlannedDuration * 2.5)
+              }
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Flame className="h-3 w-3 text-red-600" />
+              <span className="text-xs text-gray-600">Calories</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 
+                ? Math.round(week.actualStats.totalDuration * 8) // Estimated calories
+                : Math.round(week.plannedStats.totalPlannedDuration * 8)
+              }
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Weight className="h-3 w-3 text-gray-600" />
+              <span className="text-xs text-gray-600">Weight</span>
+            </div>
+            <span className="text-sm font-medium">
+              {week.weekOffset <= 0 ? "72.5 kg" : "72.3 kg"} {/* Mock data */}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -69,115 +189,17 @@ const MicroCycleContent = () => {
           <p className="text-gray-600">Track your training load development and progression over time</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {weeks.map((week, index) => (
-            <Card key={index} className={getCardStyle(week.weekOffset)}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-center">
-                  {getWeekLabel(week.weekOffset)}
-                </CardTitle>
-                <p className="text-xs text-gray-500 text-center">
-                  {formatDateRange(week.weekStart, week.weekEnd)}
-                </p>
-              </CardHeader>
-              
-              <CardContent className="space-y-3">
-                {/* Running Stats */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Activity className="h-3 w-3 text-blue-600" />
-                      <span className="text-xs text-gray-600">Running</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 
-                        ? week.actualStats.totalSessions - week.actualStats.strengthDuration / 60
-                        : Math.round(week.plannedStats.totalSessions * 0.7) // Estimate for future weeks
-                      }
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="h-3 w-3 text-blue-600" />
-                      <span className="text-xs text-gray-600">Distance</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 
-                        ? `${week.actualStats.totalDistance.toFixed(1)} km`
-                        : `${week.plannedStats.totalPlannedDistance.toFixed(1)} km`
-                      }
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-3 w-3 text-blue-600" />
-                      <span className="text-xs text-gray-600">Duration</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 
-                        ? `${week.actualStats.runningDuration} min`
-                        : `${Math.round(week.plannedStats.totalPlannedDuration * 0.7)} min`
-                      }
-                    </span>
-                  </div>
-                </div>
+        {/* Desktop Layout: Horizontal */}
+        <div className="hidden lg:grid lg:grid-cols-5 gap-6">
+          {desktopWeeks.map((week, index) => (
+            <WeekCard key={index} week={week} index={index} />
+          ))}
+        </div>
 
-                <div className="border-t pt-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Dumbbell className="h-3 w-3 text-purple-600" />
-                      <span className="text-xs text-gray-600">Strength</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 
-                        ? Math.round(week.actualStats.strengthDuration / 60)
-                        : Math.round(week.plannedStats.totalSessions * 0.3)
-                      }
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-t pt-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Flame className="h-3 w-3 text-orange-600" />
-                      <span className="text-xs text-gray-600">Load</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 
-                        ? Math.round(week.actualStats.totalDuration * 2.5) // Estimated Garmin load
-                        : Math.round(week.plannedStats.totalPlannedDuration * 2.5)
-                      }
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Flame className="h-3 w-3 text-red-600" />
-                      <span className="text-xs text-gray-600">Calories</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 
-                        ? Math.round(week.actualStats.totalDuration * 8) // Estimated calories
-                        : Math.round(week.plannedStats.totalPlannedDuration * 8)
-                      }
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-1">
-                      <Weight className="h-3 w-3 text-gray-600" />
-                      <span className="text-xs text-gray-600">Weight</span>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {week.weekOffset <= 0 ? "72.5 kg" : "72.3 kg"} {/* Mock data */}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Mobile Layout: Vertical, Current Week First */}
+        <div className="grid grid-cols-1 lg:hidden gap-4">
+          {mobileWeeks.map((week, index) => (
+            <WeekCard key={index} week={week} index={index} />
           ))}
         </div>
 
@@ -197,19 +219,19 @@ const MicroCycleContent = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-blue-600">
-                    {weeks[3].actualStats.totalDuration}
+                    {desktopWeeks[3].actualStats.totalDuration}
                   </p>
                   <p className="text-sm text-gray-500">Current Week Load (min)</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-green-600">
-                    {weeks[4].plannedStats.totalPlannedDuration}
+                    {desktopWeeks[4].plannedStats.totalPlannedDuration}
                   </p>
                   <p className="text-sm text-gray-500">Next Week Planned (min)</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-purple-600">
-                    {Math.round(((weeks[3].actualStats.totalDuration - weeks[2].actualStats.totalDuration) / weeks[2].actualStats.totalDuration * 100))}%
+                    {Math.round(((desktopWeeks[3].actualStats.totalDuration - desktopWeeks[2].actualStats.totalDuration) / desktopWeeks[2].actualStats.totalDuration * 100))}%
                   </p>
                   <p className="text-sm text-gray-500">Week-over-Week Change</p>
                 </div>
