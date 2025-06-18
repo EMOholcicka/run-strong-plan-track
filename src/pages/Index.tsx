@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,81 +60,58 @@ const Index = () => {
           <TodayTraining />
         </div>
 
-        {/* Stats Cards - Mobile: 2 columns, merged cards */}
+        {/* Stats Cards - Mobile: 2x2 grid with individual cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-          {/* Mobile: Merged Training Stats */}
-          <Card className="lg:hidden col-span-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          {/* Total Trainings */}
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Training Stats</CardTitle>
+              <CardTitle className="text-xs lg:text-sm font-medium text-blue-800">Total Trainings</CardTitle>
               <Activity className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold text-blue-700">{totalTrainings}</div>
-              <p className="text-xs text-blue-600">Total sessions</p>
-              <div className="text-sm font-semibold text-blue-600 mt-1">{totalDistance.toFixed(1)} km</div>
-            </CardContent>
-          </Card>
-
-          {/* Mobile: Time & Planned */}
-          <Card className="lg:hidden col-span-1 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-medium">Time & Plan</CardTitle>
-              <Clock className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg font-bold text-green-700">{Math.round(totalDuration / 60)}h</div>
-              <p className="text-xs text-green-600">Total time</p>
-              <div className="text-sm font-semibold text-green-600 mt-1">{upcomingTrainings.length} planned</div>
-            </CardContent>
-          </Card>
-
-          {/* Desktop: Individual Cards */}
-          <Card className="hidden lg:block bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-800">Total Trainings</CardTitle>
-              <Activity className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-700">{totalTrainings}</div>
+              <div className="text-lg lg:text-2xl font-bold text-blue-700">{totalTrainings}</div>
               <p className="text-xs text-blue-600">
                 {thisWeekTrainings} this week
               </p>
             </CardContent>
           </Card>
           
-          <Card className="hidden lg:block bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          {/* Total Distance */}
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-800">Total Distance</CardTitle>
+              <CardTitle className="text-xs lg:text-sm font-medium text-green-800">Total Distance</CardTitle>
               <MapPin className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">{totalDistance.toFixed(1)} km</div>
+              <div className="text-lg lg:text-2xl font-bold text-green-700">{totalDistance.toFixed(1)} km</div>
               <p className="text-xs text-green-600">
                 Running distance
               </p>
             </CardContent>
           </Card>
           
-          <Card className="hidden lg:block bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          {/* Total Time */}
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-800">Total Time</CardTitle>
+              <CardTitle className="text-xs lg:text-sm font-medium text-purple-800">Total Time</CardTitle>
               <Clock className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-700">{Math.round(totalDuration / 60)}h</div>
+              <div className="text-lg lg:text-2xl font-bold text-purple-700">{Math.round(totalDuration / 60)}h</div>
               <p className="text-xs text-purple-600">
                 Training hours
               </p>
             </CardContent>
           </Card>
           
-          <Card className="hidden lg:block bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          {/* Planned Sessions */}
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-800">Planned Sessions</CardTitle>
+              <CardTitle className="text-xs lg:text-sm font-medium text-orange-800">Planned Sessions</CardTitle>
               <Target className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-700">{upcomingTrainings.length}</div>
+              <div className="text-lg lg:text-2xl font-bold text-orange-700">{upcomingTrainings.length}</div>
               <p className="text-xs text-orange-600">
                 Upcoming this week
               </p>
