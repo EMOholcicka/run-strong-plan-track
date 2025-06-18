@@ -3,49 +3,45 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import TodayTraining from "@/components/TodayTraining";
-import { TrainingProvider, useTraining } from "@/contexts/TrainingContext";
-import { Activity, Calendar, Clock, TrendingUp, Plus, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
+import { Activity, Calendar, Clock, MapPin, Plus, Target, TrendingUp, Users, Zap } from "lucide-react";
 
-const DashboardContent = () => {
-  const { trainings, plannedTrainings, getWeeklyStats } = useTraining();
-  
-  const recentTrainings = trainings.slice(0, 3);
+const Index = () => {
+  const { data: trainings = [] } = useTrainings();
+  const { data: plannedTrainings = [] } = usePlannedTrainings();
+
+  // Get recent trainings (last 5)
+  const recentTrainings = trainings
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  // Get upcoming trainings (next 5 that are not completed)
+  const upcomingTrainings = plannedTrainings
+    .filter(t => !t.completed && new Date(t.plannedDate) >= new Date())
+    .sort((a, b) => new Date(a.plannedDate).getTime() - new Date(b.plannedDate).getTime())
+    .slice(0, 5);
+
+  // Calculate stats
   const totalTrainings = trainings.length;
   const thisWeekTrainings = trainings.filter(t => {
     const trainingDate = new Date(t.date);
-    const now = new Date();
-    const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+    const today = new Date();
+    const weekStart = new Date(today.setDate(today.getDate() - today.getDay() + 1));
     return trainingDate >= weekStart;
   }).length;
-  
+
   const totalDistance = trainings
-    .filter(t => t.type === 'running')
+    .filter(t => t.distance)
     .reduce((sum, t) => sum + (t.distance || 0), 0);
 
-  const upcomingPlanned = plannedTrainings
-    .filter(p => new Date(p.date) >= new Date())
-    .slice(0, 2);
+  const totalDuration = trainings.reduce((sum, t) => sum + t.duration, 0);
 
-  // Weekly comparison
-  const thisWeekStats = getWeeklyStats(0);
-  const lastWeekStats = getWeeklyStats(-1);
-  
-  const getComparisonIcon = (current: number, previous: number) => {
-    if (current > previous) return <ArrowUp className="h-4 w-4 text-green-600" />;
-    if (current < previous) return <ArrowDown className="h-4 w-4 text-red-600" />;
-    return <Minus className="h-4 w-4 text-gray-400" />;
-  };
-
-  const getComparisonText = (current: number, previous: number) => {
-    if (previous === 0) return current > 0 ? '+100%' : '0%';
-    const change = ((current - previous) / previous) * 100;
-    return `${change > 0 ? '+' : ''}${Math.round(change)}%`;
-  };
-
-  const getComparisonColor = (current: number, previous: number) => {
-    if (current > previous) return 'text-green-600';
-    if (current < previous) return 'text-red-600';
-    return 'text-gray-400';
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
@@ -53,190 +49,218 @@ const DashboardContent = () => {
       <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Track your fitness journey</p>
-        </div>
-
-        {/* Today's Training - Mobile Priority */}
-        <div className="mb-8 lg:hidden">
-          <TodayTraining />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Training Dashboard</h1>
+          <p className="text-gray-600">Track your progress and plan your workouts</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Trainings</CardTitle>
-              <Activity className="h-4 w-4" />
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalTrainings}</div>
+              <p className="text-xs text-muted-foreground">
+                {thisWeekTrainings} this week
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">This Week</CardTitle>
-              <Calendar className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{thisWeekTrainings}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Distance</CardTitle>
-              <TrendingUp className="h-4 w-4" />
+              <MapPin className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalDistance.toFixed(1)} km</div>
+              <p className="text-xs text-muted-foreground">
+                Running distance
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Duration</CardTitle>
-              <Clock className="h-4 w-4" />
+              <CardTitle className="text-sm font-medium">Total Time</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {totalTrainings > 0 ? Math.round(trainings.reduce((sum, t) => sum + t.duration, 0) / totalTrainings) : 0} min
-              </div>
+              <div className="text-2xl font-bold">{Math.round(totalDuration / 60)}h</div>
+              <p className="text-xs text-muted-foreground">
+                Training hours
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Planned Sessions</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{upcomingTrainings.length}</div>
+              <p className="text-xs text-muted-foreground">
+                Upcoming this week
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Weekly Comparison */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              This Week vs Last Week
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-1">
-                  <span className="text-2xl font-bold text-blue-600">{thisWeekStats.totalSessions}</span>
-                  {getComparisonIcon(thisWeekStats.totalSessions, lastWeekStats.totalSessions)}
-                </div>
-                <p className="text-sm text-gray-500">Total Sessions</p>
-                <p className={`text-xs ${getComparisonColor(thisWeekStats.totalSessions, lastWeekStats.totalSessions)}`}>
-                  {getComparisonText(thisWeekStats.totalSessions, lastWeekStats.totalSessions)} vs last week
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-1">
-                  <span className="text-2xl font-bold text-green-600">{Math.round(thisWeekStats.totalDuration)} min</span>
-                  {getComparisonIcon(thisWeekStats.totalDuration, lastWeekStats.totalDuration)}
-                </div>
-                <p className="text-sm text-gray-500">Total Time</p>
-                <p className={`text-xs ${getComparisonColor(thisWeekStats.totalDuration, lastWeekStats.totalDuration)}`}>
-                  {getComparisonText(thisWeekStats.totalDuration, lastWeekStats.totalDuration)} vs last week
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-1">
-                  <span className="text-2xl font-bold text-orange-600">{thisWeekStats.totalDistance.toFixed(1)} km</span>
-                  {getComparisonIcon(thisWeekStats.totalDistance, lastWeekStats.totalDistance)}
-                </div>
-                <p className="text-sm text-gray-500">Running Distance</p>
-                <p className={`text-xs ${getComparisonColor(thisWeekStats.totalDistance, lastWeekStats.totalDistance)}`}>
-                  {getComparisonText(thisWeekStats.totalDistance, lastWeekStats.totalDistance)} vs last week
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-1">
-                  <span className="text-2xl font-bold text-purple-600">{Math.round(thisWeekStats.runningDuration)} min</span>
-                  {getComparisonIcon(thisWeekStats.runningDuration, lastWeekStats.runningDuration)}
-                </div>
-                <p className="text-sm text-gray-500">Running Time</p>
-                <p className={`text-xs ${getComparisonColor(thisWeekStats.runningDuration, lastWeekStats.runningDuration)}`}>
-                  {getComparisonText(thisWeekStats.runningDuration, lastWeekStats.runningDuration)} vs last week
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Today's Training */}
+          <TodayTraining />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Recent Trainings */}
+          {/* Quick Actions */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Recent Trainings</CardTitle>
-              <Link to="/trainings">
-                <Button variant="outline" size="sm">View All</Button>
-              </Link>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Plus className="h-5 w-5 mr-2" />
+                Quick Actions
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {recentTrainings.map((training) => (
-                <div key={training.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${training.type === 'running' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
-                      <Activity className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{training.title}</h3>
-                      <p className="text-sm text-gray-500">{training.date}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{training.duration} min</p>
-                    {training.distance && <p className="text-sm text-gray-500">{training.distance} km</p>}
-                  </div>
-                </div>
-              ))}
-              
+            <CardContent className="space-y-3">
               <Link to="/add-training">
-                <Button className="w-full" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Training
+                <Button className="w-full justify-start">
+                  <Activity className="h-4 w-4 mr-2" />
+                  Log New Training
+                </Button>
+              </Link>
+              <Link to="/weekly-plan">
+                <Button variant="outline" className="w-full justify-start">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Plan This Week
+                </Button>
+              </Link>
+              <Link to="/trainings">
+                <Button variant="outline" className="w-full justify-start">
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  View All Trainings
                 </Button>
               </Link>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Upcoming Planned */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Trainings */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Upcoming Plans</CardTitle>
-              <Link to="/weekly-plan">
-                <Button variant="outline" size="sm">View Plan</Button>
-              </Link>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Activity className="h-5 w-5 mr-2" />
+                  Recent Trainings
+                </div>
+                <Link to="/trainings">
+                  <Button variant="ghost" size="sm">View All</Button>
+                </Link>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {upcomingPlanned.length > 0 ? (
-                upcomingPlanned.map((planned) => (
-                  <div key={planned.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${planned.type === 'running' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
-                        <Calendar className="h-4 w-4" />
+            <CardContent>
+              {recentTrainings.length > 0 ? (
+                <div className="space-y-3">
+                  {recentTrainings.map((training) => (
+                    <Link 
+                      key={training.id} 
+                      to={`/training/${training.id}`}
+                      className="block hover:bg-gray-50 p-3 rounded-lg transition-colors border"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className={`p-1 rounded-full ${training.type === 'running' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                            {training.type === 'running' ? <Activity className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                          </div>
+                          <span className="font-medium text-sm">{training.title}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{formatDate(training.date)}</span>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{planned.title}</h3>
-                        <p className="text-sm text-gray-500">{planned.date}</p>
+                      <div className="flex items-center space-x-4 text-xs text-gray-600">
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {training.duration} min
+                        </div>
+                        {training.distance && (
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {training.distance} km
+                          </div>
+                        )}
+                        {training.calories && (
+                          <div className="flex items-center">
+                            <Zap className="h-3 w-3 mr-1" />
+                            {training.calories} cal
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{planned.plannedDuration} min</p>
-                      {planned.plannedDistance && <p className="text-sm text-gray-500">{planned.plannedDistance} km</p>}
-                    </div>
-                  </div>
-                ))
+                    </Link>
+                  ))}
+                </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p>No upcoming planned trainings</p>
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500 mb-4">No trainings logged yet</p>
+                  <Link to="/add-training">
+                    <Button size="sm">Log Your First Training</Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Trainings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Upcoming Trainings
+                </div>
+                <Link to="/weekly-plan">
+                  <Button variant="ghost" size="sm">View Plan</Button>
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {upcomingTrainings.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingTrainings.map((training) => (
+                    <div key={training.id} className="p-3 rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className={`p-1 rounded-full ${training.type === 'running' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                            {training.type === 'running' ? <Activity className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                          </div>
+                          <span className="font-medium text-sm">{training.title}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{formatDate(training.plannedDate)}</span>
+                      </div>
+                      <div className="flex items-center space-x-4 text-xs text-gray-600">
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {training.plannedDuration} min
+                        </div>
+                        {training.plannedDistance && (
+                          <div className="flex items-center">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {training.plannedDistance} km
+                          </div>
+                        )}
+                      </div>
+                      {training.notes && (
+                        <p className="text-xs text-gray-600 mt-1 line-clamp-1">{training.notes}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500 mb-4">No upcoming trainings planned</p>
                   <Link to="/weekly-plan">
-                    <Button className="mt-4" size="sm">
-                      Plan Your Week
-                    </Button>
+                    <Button size="sm">Plan Your Week</Button>
                   </Link>
                 </div>
               )}
@@ -245,14 +269,6 @@ const DashboardContent = () => {
         </div>
       </main>
     </div>
-  );
-};
-
-const Index = () => {
-  return (
-    <TrainingProvider>
-      <DashboardContent />
-    </TrainingProvider>
   );
 };
 

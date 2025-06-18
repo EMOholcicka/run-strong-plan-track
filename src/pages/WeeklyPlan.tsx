@@ -8,13 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
-import { TrainingProvider, useTraining, PlannedTraining, RunningCategory } from "@/contexts/TrainingContext";
-import { Calendar, Plus, Clock, MapPin, Edit, Trash2, Check, Activity, Target, TrendingUp, TrendingDown } from "lucide-react";
+import { DroppableDay } from "@/components/DroppableDay";
+import { DragDropProvider } from "@/contexts/DragDropContext";
+import { useTrainings, usePlannedTrainings, useUpdatePlannedTraining, useCreatePlannedTraining } from "@/hooks/useTrainings";
+import { PlannedTraining, RunningCategory, WeeklyPlanStats } from "@/types/training";
+import { Calendar, Plus, Target, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getCategoryStyle, getCategoryDisplayName } from "@/utils/runningCategories";
 
 const WeeklyPlanContent = () => {
-  const { plannedTrainings, addPlannedTraining, updatePlannedTraining, deletePlannedTraining, getPlannedWeeklyStats, getPlannedWeeklyStatsForWeek } = useTraining();
+  const { data: plannedTrainings = [] } = usePlannedTrainings();
+  const updatePlannedTraining = useUpdatePlannedTraining();
+  const createPlannedTraining = useCreatePlannedTraining();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -22,7 +26,7 @@ const WeeklyPlanContent = () => {
   const [formData, setFormData] = useState({
     type: '' as 'running' | 'strength' | '',
     title: '',
-    date: '',
+    plannedDate: '',
     plannedDuration: '',
     plannedDistance: '',
     category: '' as RunningCategory | '',
@@ -34,7 +38,6 @@ const WeeklyPlanContent = () => {
     const today = new Date();
     const currentDay = today.getDay();
     const monday = new Date(today);
-    // Adjust to get Monday (1) as start of week
     monday.setDate(today.getDate() - currentDay + 1);
     
     const weekDates = [];
@@ -46,12 +49,11 @@ const WeeklyPlanContent = () => {
     return weekDates;
   };
 
-  // Get previous week dates starting with Monday
+  // Get previous week dates
   const getPreviousWeekDates = () => {
     const today = new Date();
     const currentDay = today.getDay();
     const lastMonday = new Date(today);
-    // Get last Monday
     lastMonday.setDate(today.getDate() - currentDay + 1 - 7);
     
     const weekDates = [];
@@ -66,13 +68,31 @@ const WeeklyPlanContent = () => {
   const currentWeekDates = getCurrentWeekDates();
   const previousWeekDates = getPreviousWeekDates();
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const currentWeekStats = getPlannedWeeklyStats();
-  const lastWeekStats = getPlannedWeeklyStatsForWeek(-1);
-  const twoWeeksAgoStats = getPlannedWeeklyStatsForWeek(-2);
+
+  // Calculate weekly stats
+  const calculateWeekStats = (weekDates: Date[]): WeeklyPlanStats => {
+    const weekStart = weekDates[0].toISOString().split('T')[0];
+    const weekEnd = weekDates[6].toISOString().split('T')[0];
+    
+    const weekTrainings = plannedTrainings.filter(t => 
+      t.plannedDate >= weekStart && t.plannedDate <= weekEnd
+    );
+
+    return {
+      totalPlannedDuration: weekTrainings.reduce((sum, t) => sum + t.plannedDuration, 0),
+      totalPlannedDistance: weekTrainings
+        .filter(t => t.plannedDistance)
+        .reduce((sum, t) => sum + (t.plannedDistance || 0), 0),
+      totalSessions: weekTrainings.length
+    };
+  };
+
+  const currentWeekStats = calculateWeekStats(currentWeekDates);
+  const lastWeekStats = calculateWeekStats(previousWeekDates);
 
   const getPlannedTrainingsForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return plannedTrainings.filter(training => training.date === dateStr);
+    return plannedTrainings.filter(training => training.plannedDate === dateStr);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -83,7 +103,7 @@ const WeeklyPlanContent = () => {
     setFormData({
       type: '',
       title: '',
-      date: '',
+      plannedDate: '',
       plannedDuration: '',
       plannedDistance: '',
       category: '',
@@ -95,7 +115,7 @@ const WeeklyPlanContent = () => {
   const openAddDialog = (date?: Date) => {
     resetForm();
     if (date) {
-      setFormData(prev => ({ ...prev, date: date.toISOString().split('T')[0] }));
+      setFormData(prev => ({ ...prev, plannedDate: date.toISOString().split('T')[0] }));
     }
     setIsDialogOpen(true);
   };
@@ -104,7 +124,7 @@ const WeeklyPlanContent = () => {
     setFormData({
       type: training.type,
       title: training.title,
-      date: training.date,
+      plannedDate: training.plannedDate,
       plannedDuration: training.plannedDuration.toString(),
       plannedDistance: training.plannedDistance?.toString() || '',
       category: training.category || '',
@@ -117,7 +137,7 @@ const WeeklyPlanContent = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.type || !formData.title || !formData.date || !formData.plannedDuration) {
+    if (!formData.type || !formData.title || !formData.plannedDate || !formData.plannedDuration) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -127,74 +147,32 @@ const WeeklyPlanContent = () => {
     }
 
     const planData = {
+      userId: 'user1',
       type: formData.type,
       title: formData.title,
-      date: formData.date,
+      plannedDate: formData.plannedDate,
       plannedDuration: parseInt(formData.plannedDuration),
+      completed: false,
       ...(formData.plannedDistance && { plannedDistance: parseFloat(formData.plannedDistance) }),
       ...(formData.category && { category: formData.category as RunningCategory }),
       ...(formData.notes && { notes: formData.notes })
     };
 
     if (editingId) {
-      updatePlannedTraining(editingId, planData);
-      toast({
-        title: "Plan Updated!",
-        description: "Your training plan has been updated.",
-      });
+      updatePlannedTraining.mutate({ id: editingId, updates: planData });
     } else {
-      addPlannedTraining(planData);
-      toast({
-        title: "Plan Added!",
-        description: "Your training has been planned.",
-      });
+      createPlannedTraining.mutate(planData);
     }
     
     setIsDialogOpen(false);
     resetForm();
   };
 
-  const markAsCompleted = (id: string) => {
-    updatePlannedTraining(id, { completed: true });
-    toast({
-      title: "Training Completed!",
-      description: "Great job on completing your planned training!",
+  const handleDropTraining = (trainingId: string, newDate: string) => {
+    updatePlannedTraining.mutate({
+      id: trainingId,
+      updates: { plannedDate: newDate }
     });
-  };
-
-  const getTrainingCardStyle = (training: PlannedTraining) => {
-    if (training.completed) {
-      return 'bg-green-50 border-green-200';
-    }
-    
-    if (training.type === 'running' && training.category) {
-      return getCategoryStyle(training.category).bgClass;
-    }
-    
-    return training.type === 'running' 
-      ? 'bg-blue-50 border-blue-200' 
-      : 'bg-purple-50 border-purple-200';
-  };
-
-  const getTrainingBadgeStyle = (training: PlannedTraining) => {
-    if (training.completed) {
-      return 'bg-green-100 text-green-800';
-    }
-    
-    if (training.type === 'running' && training.category) {
-      return getCategoryStyle(training.category).badgeClass;
-    }
-    
-    return training.type === 'running'
-      ? 'bg-blue-100 text-blue-800'
-      : 'bg-purple-100 text-purple-800';
-  };
-
-  const getTrainingTypeDisplay = (training: PlannedTraining) => {
-    if (training.type === 'running' && training.category) {
-      return getCategoryDisplayName(training.category);
-    }
-    return training.type;
   };
 
   const getComparisonIcon = (current: number, previous: number) => {
@@ -208,99 +186,6 @@ const WeeklyPlanContent = () => {
     const change = ((current - previous) / previous * 100).toFixed(0);
     return `${Number(change) >= 0 ? '+' : ''}${change}%`;
   };
-
-  const renderWeekCalendar = (weekDates: Date[], weekTitle: string, isPreviousWeek = false) => (
-    <div className="mb-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">{weekTitle}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-        {weekDates.map((date, index) => {
-          const dayTrainings = getPlannedTrainingsForDate(date);
-          const isToday = date.toDateString() === new Date().toDateString();
-          
-          return (
-            <Card key={index} className={`${isToday && !isPreviousWeek ? 'ring-2 ring-blue-500' : ''} ${isPreviousWeek ? 'bg-gray-50' : ''}`}>
-              <CardHeader className="pb-3">
-                <div className="text-center">
-                  <div className="text-sm font-medium text-gray-500">
-                    {dayNames[index]}
-                  </div>
-                  <div className={`text-2xl font-bold ${isToday && !isPreviousWeek ? 'text-blue-600' : 'text-gray-900'}`}>
-                    {date.getDate()}
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-2 min-h-[200px]">
-                {dayTrainings.length > 0 ? (
-                  dayTrainings.map((training) => (
-                    <div
-                      key={training.id}
-                      className={`p-3 rounded-lg border ${getTrainingCardStyle(training)}`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${getTrainingBadgeStyle(training)}`}>
-                          {getTrainingTypeDisplay(training)}
-                        </span>
-                        
-                        <div className="flex space-x-1">
-                          {!training.completed && !isPreviousWeek && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => openEditDialog(training)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="font-medium text-sm">{training.title}</div>
-                        
-                        <div className="flex items-center text-xs text-gray-600">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{training.plannedDuration} min</span>
-                        </div>
-                        
-                        {training.plannedDistance && (
-                          <div className="flex items-center text-xs text-gray-600">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span>{training.plannedDistance} km</span>
-                          </div>
-                        )}
-                        
-                        {training.notes && (
-                          <div className="text-xs text-gray-600 line-clamp-2">
-                            {training.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  !isPreviousWeek && (
-                    <div className="text-center py-8">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openAddDialog(date)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Plan
-                      </Button>
-                    </div>
-                  )
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -342,12 +227,12 @@ const WeeklyPlanContent = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date *</Label>
+                    <Label htmlFor="plannedDate">Date *</Label>
                     <Input
-                      id="date"
+                      id="plannedDate"
                       type="date"
-                      value={formData.date}
-                      onChange={(e) => handleInputChange('date', e.target.value)}
+                      value={formData.plannedDate}
+                      onChange={(e) => handleInputChange('plannedDate', e.target.value)}
                       required
                     />
                   </div>
@@ -432,16 +317,16 @@ const WeeklyPlanContent = () => {
           </Dialog>
         </div>
 
-        {/* Weekly Summary with 2-week comparison */}
+        {/* Weekly Summary */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Target className="h-5 w-5 mr-2" />
-              Weekly Plan Summary - 3 Week Comparison
+              Weekly Plan Summary
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <p className="text-2xl font-bold text-blue-600">{Math.round(currentWeekStats.totalPlannedDuration)} min</p>
@@ -449,9 +334,7 @@ const WeeklyPlanContent = () => {
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Total Planned Time</p>
                 <div className="text-xs text-gray-400">
-                  <span>vs last week: {getComparisonText(currentWeekStats.totalPlannedDuration, lastWeekStats.totalPlannedDuration)}</span>
-                  <br />
-                  <span>vs 2 weeks ago: {getComparisonText(currentWeekStats.totalPlannedDuration, twoWeeksAgoStats.totalPlannedDuration)}</span>
+                  vs last week: {getComparisonText(currentWeekStats.totalPlannedDuration, lastWeekStats.totalPlannedDuration)}
                 </div>
               </div>
               <div className="text-center">
@@ -461,46 +344,18 @@ const WeeklyPlanContent = () => {
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Total Running Distance</p>
                 <div className="text-xs text-gray-400">
-                  <span>vs last week: {getComparisonText(currentWeekStats.totalPlannedDistance, lastWeekStats.totalPlannedDistance)}</span>
-                  <br />
-                  <span>vs 2 weeks ago: {getComparisonText(currentWeekStats.totalPlannedDistance, twoWeeksAgoStats.totalPlannedDistance)}</span>
+                  vs last week: {getComparisonText(currentWeekStats.totalPlannedDistance, lastWeekStats.totalPlannedDistance)}
                 </div>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <p className="text-2xl font-bold text-purple-600">{plannedTrainings.length}</p>
-                  {getComparisonIcon(plannedTrainings.length, lastWeekStats.totalSessions)}
+                  <p className="text-2xl font-bold text-purple-600">{currentWeekStats.totalSessions}</p>
+                  {getComparisonIcon(currentWeekStats.totalSessions, lastWeekStats.totalSessions)}
                 </div>
                 <p className="text-sm text-gray-500 mb-1">Total Sessions</p>
                 <div className="text-xs text-gray-400">
-                  <span>vs last week: {getComparisonText(plannedTrainings.length, lastWeekStats.totalSessions)}</span>
-                  <br />
-                  <span>vs 2 weeks ago: {getComparisonText(plannedTrainings.length, twoWeeksAgoStats.totalSessions)}</span>
+                  vs last week: {getComparisonText(currentWeekStats.totalSessions, lastWeekStats.totalSessions)}
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Previous Week Calendar */}
-        {renderWeekCalendar(previousWeekDates, "Previous Week", true)}
-
-        {/* Current Week Calendar */}
-        {renderWeekCalendar(currentWeekDates, "Current Week")}
-
-        {/* Week Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Week Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{plannedTrainings.length}</p>
-                <p className="text-sm text-gray-500">Total Planned</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">
@@ -508,21 +363,70 @@ const WeeklyPlanContent = () => {
                 </p>
                 <p className="text-sm text-gray-500">Completed</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">
-                  {plannedTrainings.filter(t => t.type === 'running').length}
-                </p>
-                <p className="text-sm text-gray-500">Running Sessions</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-orange-600">
-                  {plannedTrainings.filter(t => t.type === 'strength').length}
-                </p>
-                <p className="text-sm text-gray-500">Strength Sessions</p>
-              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Current Week Calendar */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Week</h2>
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+            {currentWeekDates.map((date, index) => {
+              const dayTrainings = getPlannedTrainingsForDate(date);
+              const isToday = date.toDateString() === new Date().toDateString();
+              
+              return (
+                <DroppableDay
+                  key={index}
+                  date={date}
+                  dayName={dayNames[index]}
+                  trainings={dayTrainings}
+                  isToday={isToday}
+                  onAddTraining={openAddDialog}
+                  onEditTraining={openEditDialog}
+                  onDropTraining={handleDropTraining}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Previous Week Calendar */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Previous Week</h2>
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+            {previousWeekDates.map((date, index) => {
+              const dayTrainings = getPlannedTrainingsForDate(date);
+              
+              return (
+                <Card key={index} className="bg-gray-50">
+                  <CardHeader className="pb-3">
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-gray-500">
+                        {dayNames[index]}
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {date.getDate()}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-2 min-h-[200px]">
+                    {dayTrainings.map((training) => (
+                      <div
+                        key={training.id}
+                        className="p-3 rounded-lg border bg-white opacity-75"
+                      >
+                        <div className="font-medium text-sm">{training.title}</div>
+                        <div className="text-xs text-gray-600">{training.plannedDuration} min</div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
       </main>
     </div>
   );
@@ -530,9 +434,9 @@ const WeeklyPlanContent = () => {
 
 const WeeklyPlan = () => {
   return (
-    <TrainingProvider>
+    <DragDropProvider>
       <WeeklyPlanContent />
-    </TrainingProvider>
+    </DragDropProvider>
   );
 };
 

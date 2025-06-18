@@ -1,6 +1,8 @@
 
 export type TrainingType = 'running' | 'cycling' | 'swimming' | 'strength' | 'yoga' | 'other';
 
+export type RunningCategory = 'aerobic' | 'intervals' | 'tempo' | 'hills';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -19,12 +21,16 @@ export interface Training {
   distance?: number;
   pace?: string;
   calories?: number;
-  notes?: string;
+  trainerNotes?: string;
+  traineeNotes?: string;
   heartRateAvg?: number;
   heartRateMax?: number;
-  exercises?: Exercise[];
-  createdAt?: string;
-  updatedAt?: string;
+  exercises: Exercise[];
+  stravaLink?: string;
+  garminLink?: string;
+  category?: RunningCategory;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PlannedTraining {
@@ -33,11 +39,18 @@ export interface PlannedTraining {
   title: string;
   type: TrainingType;
   plannedDate: string;
-  plannedDuration?: number;
+  plannedDuration: number;
   plannedDistance?: number;
   notes?: string;
   completed: boolean;
   completedTrainingId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  category?: RunningCategory;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyPlanStats {
+  totalPlannedDuration: number;
+  totalPlannedDistance: number;
+  totalSessions: number;
 }

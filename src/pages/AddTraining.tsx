@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,54 +7,76 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navigation from "@/components/Navigation";
-import { TrainingProvider, useTraining, Exercise } from "@/contexts/TrainingContext";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { useCreateTraining } from "@/hooks/useTrainings";
+import { TrainingType, RunningCategory } from "@/types/training";
+import { Activity, Calendar, Clock, MapPin, Plus, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const AddTrainingContent = () => {
+const AddTraining = () => {
   const navigate = useNavigate();
-  const { addTraining } = useTraining();
+  const createTraining = useCreateTraining();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    type: '' as 'running' | 'strength' | '',
+    type: '' as TrainingType | '',
     title: '',
     date: new Date().toISOString().split('T')[0],
     duration: '',
     distance: '',
     pace: '',
     calories: '',
-    avgHeartRate: '',
-    maxHeartRate: '',
-    notes: ''
+    trainerNotes: '',
+    traineeNotes: '',
+    heartRateAvg: '',
+    heartRateMax: '',
+    stravaLink: '',
+    garminLink: '',
+    category: '' as RunningCategory | '',
+    exercises: [] as Array<{
+      name: string;
+      sets: number;
+      reps: number;
+      weight?: number;
+    }>
   });
-  
-  const [exercises, setExercises] = useState<Exercise[]>([
-    { name: '', sets: 0, reps: 0, weight: 0 }
-  ]);
+
+  const [newExercise, setNewExercise] = useState({
+    name: '',
+    sets: '',
+    reps: '',
+    weight: ''
+  });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const addExercise = () => {
-    setExercises(prev => [...prev, { name: '', sets: 0, reps: 0, weight: 0 }]);
+    if (newExercise.name && newExercise.sets && newExercise.reps) {
+      setFormData(prev => ({
+        ...prev,
+        exercises: [...prev.exercises, {
+          name: newExercise.name,
+          sets: parseInt(newExercise.sets),
+          reps: parseInt(newExercise.reps),
+          weight: newExercise.weight ? parseFloat(newExercise.weight) : undefined
+        }]
+      }));
+      setNewExercise({ name: '', sets: '', reps: '', weight: '' });
+    }
   };
 
   const removeExercise = (index: number) => {
-    setExercises(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updateExercise = (index: number, field: keyof Exercise, value: string | number) => {
-    setExercises(prev => prev.map((exercise, i) => 
-      i === index ? { ...exercise, [field]: value } : exercise
-    ));
+    setFormData(prev => ({
+      ...prev,
+      exercises: prev.exercises.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.type || !formData.title || !formData.duration) {
+    if (!formData.type || !formData.title || !formData.date || !formData.duration) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -64,72 +85,77 @@ const AddTrainingContent = () => {
       return;
     }
 
-    const training = {
-      type: formData.type,
+    const trainingData = {
+      userId: 'user1', // This would come from auth in real app
+      type: formData.type as TrainingType,
       title: formData.title,
       date: formData.date,
       duration: parseInt(formData.duration),
+      exercises: formData.exercises.map((exercise, index) => ({
+        id: `temp-${index}`,
+        ...exercise
+      })),
       ...(formData.distance && { distance: parseFloat(formData.distance) }),
       ...(formData.pace && { pace: formData.pace }),
       ...(formData.calories && { calories: parseInt(formData.calories) }),
-      ...(formData.avgHeartRate && formData.maxHeartRate && {
-        heartRate: {
-          avg: parseInt(formData.avgHeartRate),
-          max: parseInt(formData.maxHeartRate)
-        }
-      }),
-      ...(formData.type === 'strength' && {
-        exercises: exercises.filter(ex => ex.name && ex.sets && ex.reps)
-      }),
-      ...(formData.notes && { notes: formData.notes })
+      ...(formData.trainerNotes && { trainerNotes: formData.trainerNotes }),
+      ...(formData.traineeNotes && { traineeNotes: formData.traineeNotes }),
+      ...(formData.heartRateAvg && { heartRateAvg: parseInt(formData.heartRateAvg) }),
+      ...(formData.heartRateMax && { heartRateMax: parseInt(formData.heartRateMax) }),
+      ...(formData.stravaLink && { stravaLink: formData.stravaLink }),
+      ...(formData.garminLink && { garminLink: formData.garminLink }),
+      ...(formData.category && { category: formData.category as RunningCategory }),
     };
 
-    addTraining(training);
-    
-    toast({
-      title: "Training Added!",
-      description: "Your training has been successfully recorded.",
+    createTraining.mutate(trainingData, {
+      onSuccess: () => {
+        toast({
+          title: "Training Added!",
+          description: "Your training has been successfully logged.",
+        });
+        navigate('/trainings');
+      }
     });
-    
-    navigate('/trainings');
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Training</h1>
-          <p className="text-gray-600">Record your workout details</p>
+          <p className="text-gray-600">Log your completed workout</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Training Details</CardTitle>
+            <CardTitle className="flex items-center">
+              <Plus className="h-5 w-5 mr-2" />
+              Training Details
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="type">Training Type *</Label>
                   <Select value={formData.type} onValueChange={(value: any) => handleInputChange('type', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="Select training type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="running">Running</SelectItem>
                       <SelectItem value="strength">Strength Training</SelectItem>
+                      <SelectItem value="cycling">Cycling</SelectItem>
+                      <SelectItem value="swimming">Swimming</SelectItem>
+                      <SelectItem value="yoga">Yoga</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="date">Date *</Label>
                   <Input
@@ -141,32 +167,50 @@ const AddTrainingContent = () => {
                   />
                 </div>
               </div>
-              
+
+              {formData.type === 'running' && (
+                <div className="space-y-2">
+                  <Label htmlFor="category">Running Category</Label>
+                  <Select value={formData.category} onValueChange={(value: any) => handleInputChange('category', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="aerobic">Aerobic</SelectItem>
+                      <SelectItem value="intervals">Intervals</SelectItem>
+                      <SelectItem value="tempo">Tempo</SelectItem>
+                      <SelectItem value="hills">Hills</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="title">Training Title *</Label>
                 <Input
                   id="title"
-                  placeholder="e.g., Morning Run, Upper Body Workout"
+                  placeholder="e.g., Morning Run, Upper Body Strength"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (minutes) *</Label>
+                  <Label htmlFor="duration">Duration (min) *</Label>
                   <Input
                     id="duration"
                     type="number"
-                    placeholder="45"
+                    placeholder="60"
                     value={formData.duration}
                     onChange={(e) => handleInputChange('duration', e.target.value)}
                     required
                   />
                 </div>
-                
-                {formData.type === 'running' && (
+
+                {(formData.type === 'running' || formData.type === 'cycling') && (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="distance">Distance (km)</Label>
@@ -174,14 +218,14 @@ const AddTrainingContent = () => {
                         id="distance"
                         type="number"
                         step="0.1"
-                        placeholder="5.0"
+                        placeholder="10.0"
                         value={formData.distance}
                         onChange={(e) => handleInputChange('distance', e.target.value)}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <Label htmlFor="pace">Pace (min/km)</Label>
+                      <Label htmlFor="pace">Pace (per km)</Label>
                       <Input
                         id="pace"
                         placeholder="5:30"
@@ -191,42 +235,65 @@ const AddTrainingContent = () => {
                     </div>
                   </>
                 )}
-                
-                {formData.type === 'strength' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="calories">Calories</Label>
-                    <Input
-                      id="calories"
-                      type="number"
-                      placeholder="300"
-                      value={formData.calories}
-                      onChange={(e) => handleInputChange('calories', e.target.value)}
-                    />
-                  </div>
-                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="calories">Calories</Label>
+                  <Input
+                    id="calories"
+                    type="number"
+                    placeholder="400"
+                    value={formData.calories}
+                    onChange={(e) => handleInputChange('calories', e.target.value)}
+                  />
+                </div>
               </div>
 
               {/* Heart Rate */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="avgHeartRate">Average Heart Rate</Label>
+                  <Label htmlFor="heartRateAvg">Average Heart Rate</Label>
                   <Input
-                    id="avgHeartRate"
+                    id="heartRateAvg"
                     type="number"
-                    placeholder="145"
-                    value={formData.avgHeartRate}
-                    onChange={(e) => handleInputChange('avgHeartRate', e.target.value)}
+                    placeholder="150"
+                    value={formData.heartRateAvg}
+                    onChange={(e) => handleInputChange('heartRateAvg', e.target.value)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="maxHeartRate">Max Heart Rate</Label>
+                  <Label htmlFor="heartRateMax">Max Heart Rate</Label>
                   <Input
-                    id="maxHeartRate"
+                    id="heartRateMax"
                     type="number"
-                    placeholder="165"
-                    value={formData.maxHeartRate}
-                    onChange={(e) => handleInputChange('maxHeartRate', e.target.value)}
+                    placeholder="180"
+                    value={formData.heartRateMax}
+                    onChange={(e) => handleInputChange('heartRateMax', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* External Links */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stravaLink">Strava Link</Label>
+                  <Input
+                    id="stravaLink"
+                    type="url"
+                    placeholder="https://strava.com/activities/..."
+                    value={formData.stravaLink}
+                    onChange={(e) => handleInputChange('stravaLink', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="garminLink">Garmin Link</Label>
+                  <Input
+                    id="garminLink"
+                    type="url"
+                    placeholder="https://garmin.com/activities/..."
+                    value={formData.garminLink}
+                    onChange={(e) => handleInputChange('garminLink', e.target.value)}
                   />
                 </div>
               </div>
@@ -234,75 +301,102 @@ const AddTrainingContent = () => {
               {/* Exercises for Strength Training */}
               {formData.type === 'strength' && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Exercises</Label>
-                    <Button type="button" onClick={addExercise} size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Exercise
-                    </Button>
-                  </div>
+                  <Label>Exercises</Label>
                   
-                  {exercises.map((exercise, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-4 bg-gray-50 rounded-lg">
-                      <div className="md:col-span-2">
-                        <Input
-                          placeholder="Exercise name"
-                          value={exercise.name}
-                          onChange={(e) => updateExercise(index, 'name', e.target.value)}
-                        />
-                      </div>
-                      <Input
-                        type="number"
-                        placeholder="Sets"
-                        value={exercise.sets || ''}
-                        onChange={(e) => updateExercise(index, 'sets', parseInt(e.target.value) || 0)}
-                      />
-                      <Input
-                        type="number"
-                        placeholder="Reps"
-                        value={exercise.reps || ''}
-                        onChange={(e) => updateExercise(index, 'reps', parseInt(e.target.value) || 0)}
-                      />
-                      <div className="flex space-x-2">
-                        <Input
-                          type="number"
-                          placeholder="Weight (kg)"
-                          value={exercise.weight || ''}
-                          onChange={(e) => updateExercise(index, 'weight', parseFloat(e.target.value) || 0)}
-                        />
-                        {exercises.length > 1 && (
+                  {/* Add Exercise Form */}
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 border rounded-lg">
+                    <Input
+                      placeholder="Exercise name"
+                      value={newExercise.name}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Sets"
+                      value={newExercise.sets}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, sets: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Reps"
+                      value={newExercise.reps}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, reps: e.target.value }))}
+                    />
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="Weight (kg)"
+                      value={newExercise.weight}
+                      onChange={(e) => setNewExercise(prev => ({ ...prev, weight: e.target.value }))}
+                    />
+                    <Button type="button" onClick={addExercise}>Add</Button>
+                  </div>
+
+                  {/* Exercise List */}
+                  {formData.exercises.length > 0 && (
+                    <div className="space-y-2">
+                      {formData.exercises.map((exercise, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div>
+                            <span className="font-medium">{exercise.name}</span>
+                            <span className="text-gray-600 ml-2">
+                              {exercise.sets} sets × {exercise.reps} reps
+                              {exercise.weight && ` @ ${exercise.weight}kg`}
+                            </span>
+                          </div>
                           <Button
                             type="button"
-                            onClick={() => removeExercise(index)}
+                            variant="ghost"
                             size="sm"
-                            variant="outline"
+                            onClick={() => removeExercise(index)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            Remove
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
 
               {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="How did the training feel? Any observations..."
-                  rows={4}
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="trainerNotes">Trainer Notes</Label>
+                  <Textarea
+                    id="trainerNotes"
+                    placeholder="Coach feedback and observations..."
+                    value={formData.trainerNotes}
+                    onChange={(e) => handleInputChange('trainerNotes', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="traineeNotes">Trainee Notes</Label>
+                  <Textarea
+                    id="traineeNotes"
+                    placeholder="How did you feel during the workout..."
+                    value={formData.traineeNotes}
+                    onChange={(e) => handleInputChange('traineeNotes', e.target.value)}
+                  />
+                </div>
               </div>
 
+              {/* Submit Buttons */}
               <div className="flex space-x-4">
-                <Button type="submit" className="flex-1">
-                  Save Training
+                <Button 
+                  type="submit" 
+                  className="flex-1"
+                  disabled={createTraining.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {createTraining.isPending ? 'Saving...' : 'Save Training'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => navigate('/trainings')}
+                >
                   Cancel
                 </Button>
               </div>
@@ -311,14 +405,6 @@ const AddTrainingContent = () => {
         </Card>
       </main>
     </div>
-  );
-};
-
-const AddTraining = () => {
-  return (
-    <TrainingProvider>
-      <AddTrainingContent />
-    </TrainingProvider>
   );
 };
 
