@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import Navigation from "@/components/Navigation";
 import { DroppableDay } from "@/components/DroppableDay";
 import { DragDropProvider } from "@/contexts/DragDropContext";
 import { useTrainings, usePlannedTrainings, useUpdatePlannedTraining, useCreatePlannedTraining } from "@/hooks/useTrainings";
-import { PlannedTraining, RunningCategory, WeeklyPlanStats } from "@/types/training";
+import { PlannedTraining, RunningCategory, WeeklyPlanStats, TrainingType } from "@/types/training";
 import { Calendar, Plus, Target, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,7 +23,7 @@ const WeeklyPlanContent = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
-    type: '' as 'running' | 'strength' | '',
+    type: '' as TrainingType | '',
     title: '',
     plannedDate: '',
     plannedDuration: '',
@@ -148,7 +147,7 @@ const WeeklyPlanContent = () => {
 
     const planData = {
       userId: 'user1',
-      type: formData.type,
+      type: formData.type as TrainingType,
       title: formData.title,
       plannedDate: formData.plannedDate,
       plannedDuration: parseInt(formData.plannedDuration),
@@ -221,7 +220,11 @@ const WeeklyPlanContent = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="running">Running</SelectItem>
+                        <SelectItem value="cycling">Cycling</SelectItem>
+                        <SelectItem value="swimming">Swimming</SelectItem>
                         <SelectItem value="strength">Strength Training</SelectItem>
+                        <SelectItem value="yoga">Yoga</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -279,7 +282,7 @@ const WeeklyPlanContent = () => {
                     />
                   </div>
                   
-                  {formData.type === 'running' && (
+                  {(formData.type === 'running' || formData.type === 'cycling') && (
                     <div className="space-y-2">
                       <Label htmlFor="plannedDistance">Distance (km)</Label>
                       <Input
