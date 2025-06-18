@@ -29,6 +29,7 @@ export interface Training {
   stravaLink?: string;
   garminLink?: string;
   category?: RunningCategory;
+  rating?: number; // 1-10 scale
   createdAt: string;
   updatedAt: string;
 }
