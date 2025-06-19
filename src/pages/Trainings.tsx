@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/Navigation";
 import { useTrainings, useUpdateTraining, useDeleteTraining } from "@/hooks/useTrainings";
 import { Training } from "@/types/training";
-import { Activity, Clock, MapPin, Zap, Calendar, Eye, Edit, Trash2, ExternalLink } from "lucide-react";
+import { Activity, Clock, MapPin, Zap, Calendar, Eye, Edit, Trash2, ExternalLink, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Trainings = () => {
@@ -106,27 +105,32 @@ const Trainings = () => {
       <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">All Trainings</h1>
-            <p className="text-gray-600">{filteredTrainings.length} training sessions</p>
-          </div>
-          
-          <div className="flex space-x-4">
-            <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Trainings</SelectItem>
-                <SelectItem value="running">Running Only</SelectItem>
-                <SelectItem value="strength">Strength Only</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">All Trainings</h1>
+              <p className="text-gray-600">{filteredTrainings.length} training sessions</p>
+            </div>
             
-            <Link to="/add-training">
-              <Button>Add New Training</Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
+              <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Trainings</SelectItem>
+                  <SelectItem value="running">Running Only</SelectItem>
+                  <SelectItem value="strength">Strength Only</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Link to="/add-training" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Training
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 

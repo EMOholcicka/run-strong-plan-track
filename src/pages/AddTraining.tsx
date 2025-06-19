@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,6 +86,8 @@ const AddTraining = () => {
       return;
     }
 
+    console.log('Form data before submission:', formData);
+
     const trainingData = {
       userId: 'user1', // This would come from auth in real app
       type: formData.type as TrainingType,
@@ -92,7 +95,7 @@ const AddTraining = () => {
       date: formData.date,
       duration: parseInt(formData.duration),
       exercises: formData.exercises.map((exercise, index) => ({
-        id: `temp-${index}`,
+        id: `ex-${Date.now()}-${index}`,
         ...exercise
       })),
       ...(formData.distance && { distance: parseFloat(formData.distance) }),
@@ -107,13 +110,24 @@ const AddTraining = () => {
       ...(formData.category && { category: formData.category as RunningCategory }),
     };
 
+    console.log('Training data to submit:', trainingData);
+
     createTraining.mutate(trainingData, {
       onSuccess: () => {
+        console.log('Training created successfully');
         toast({
           title: "Training Added!",
           description: "Your training has been successfully logged.",
         });
         navigate('/trainings');
+      },
+      onError: (error) => {
+        console.error('Error creating training:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add training. Please try again.",
+          variant: "destructive"
+        });
       }
     });
   };
