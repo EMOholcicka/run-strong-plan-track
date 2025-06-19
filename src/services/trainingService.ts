@@ -1,10 +1,9 @@
-
 import { mockApiService } from './mockApiService';
 import { apiService } from './apiService';
 import { Training, PlannedTraining } from '@/types/training';
 
 // Configuration flag to switch between mock and real API
-const USE_MOCK_DATA = process.env.REACT_APP_USE_MOCK_DATA === 'true';
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 export class TrainingService {
   private get service() {
