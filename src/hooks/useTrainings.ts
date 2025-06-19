@@ -18,7 +18,7 @@ export const TRAINING_KEYS = {
 export const useTrainings = () => {
   return useQuery({
     queryKey: TRAINING_KEYS.lists(),
-    queryFn: trainingService.getTrainings,
+    queryFn: () => trainingService.getTrainings(),
   });
 };
 
@@ -35,7 +35,12 @@ export const useCreateTraining = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: trainingService.createTraining,
+    mutationFn: (trainingData: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>) => {
+      console.log('useCreateTraining mutationFn called with:', trainingData);
+      console.log('trainingService:', trainingService);
+      console.log('trainingService.createTraining:', trainingService.createTraining);
+      return trainingService.createTraining(trainingData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.lists() });
       toast({
@@ -44,6 +49,7 @@ export const useCreateTraining = () => {
       });
     },
     onError: (error) => {
+      console.error('useCreateTraining error:', error);
       toast({
         title: "Error",
         description: "Failed to add training. Please try again.",
