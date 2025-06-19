@@ -18,6 +18,8 @@ class ApiService {
       ...options,
     };
 
+    console.log('Making API request to:', url, 'with config:', config);
+
     try {
       const response = await fetch(url, config);
       
@@ -42,6 +44,7 @@ class ApiService {
   }
 
   async createTraining(trainingData: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>): Promise<Training> {
+    console.log('ApiService createTraining called with:', trainingData);
     return this.request<Training>('/trainings', {
       method: 'POST',
       body: JSON.stringify(trainingData),
