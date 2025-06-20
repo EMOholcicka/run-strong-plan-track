@@ -133,8 +133,10 @@ const WeeklyPlanContent = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form submission started with data:', formData);
     
     if (!formData.type || !formData.title || !formData.plannedDate || !formData.plannedDuration) {
       toast({
@@ -146,7 +148,7 @@ const WeeklyPlanContent = () => {
     }
 
     const planData = {
-      user_id: 'user1', // Changed from userId to user_id for FastAPI compatibility
+      user_id: 'user1',
       type: formData.type as TrainingType,
       title: formData.title,
       plannedDate: formData.plannedDate,
@@ -157,14 +159,28 @@ const WeeklyPlanContent = () => {
       ...(formData.notes && { notes: formData.notes })
     };
 
-    if (editingId) {
-      updatePlannedTraining.mutate({ id: editingId, updates: planData });
-    } else {
-      createPlannedTraining.mutate(planData);
+    console.log('Prepared plan data:', planData);
+    console.log('Editing ID:', editingId);
+
+    try {
+      if (editingId) {
+        console.log('Updating planned training with ID:', editingId);
+        await updatePlannedTraining.mutateAsync({ id: editingId, updates: planData });
+      } else {
+        console.log('Creating new planned training');
+        await createPlannedTraining.mutateAsync(planData);
+      }
+      
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save training plan. Please try again.",
+        variant: "destructive"
+      });
     }
-    
-    setIsDialogOpen(false);
-    resetForm();
   };
 
   const handleDropTraining = (trainingId: string, newDate: string) => {
@@ -199,9 +215,8 @@ const WeeklyPlanContent = () => {
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => openAddDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Training Plan
+              <Button onClick={() => openAddDialog()} size="icon">
+                <Plus className="h-4 w-4" />
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
