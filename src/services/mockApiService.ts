@@ -64,6 +64,7 @@ const mockTrainings: Training[] = [
     distance: 5.0,
     pace: '6:00',
     calories: 280,
+    exercises: [],
     createdAt: '2025-01-13T19:00:00Z',
     updatedAt: '2025-01-13T19:00:00Z'
   },
@@ -76,6 +77,7 @@ const mockTrainings: Training[] = [
     duration: 45,
     calories: 150,
     traineeNotes: 'Very relaxing session',
+    exercises: [],
     createdAt: '2025-01-12T07:00:00Z',
     updatedAt: '2025-01-12T07:00:00Z'
   },
@@ -88,6 +90,7 @@ const mockTrainings: Training[] = [
     duration: 90,
     distance: 25.0,
     calories: 600,
+    exercises: [],
     createdAt: '2025-01-11T16:00:00Z',
     updatedAt: '2025-01-11T16:00:00Z'
   }
