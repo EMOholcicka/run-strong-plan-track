@@ -5,7 +5,7 @@ import { Training, PlannedTraining } from '@/types/training';
 const mockTrainings: Training[] = [
   {
     id: '1',
-    userId: 'user1',
+    user_id: 'user1', // Changed from userId to user_id
     title: 'Morning Run',
     type: 'running',
     date: '2025-01-15',
@@ -27,7 +27,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '2',
-    userId: 'user1',
+    user_id: 'user1', // Changed from userId to user_id
     title: 'Strength Training',
     type: 'strength',
     date: '2025-01-14',
@@ -56,7 +56,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '3',
-    userId: 'user1',
+    user_id: 'user1', // Changed from userId to user_id
     title: 'Evening Jog',
     type: 'running',
     date: '2025-01-13',
@@ -70,7 +70,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '4',
-    userId: 'user1',
+    user_id: 'user1', // Changed from userId to user_id
     title: 'Yoga Session',
     type: 'yoga',
     date: '2025-01-12',
@@ -83,7 +83,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '5',
-    userId: 'user1',
+    user_id: 'user1', // Changed from userId to user_id
     title: 'Cycling',
     type: 'cycling',
     date: '2025-01-11',
@@ -99,7 +99,7 @@ const mockTrainings: Training[] = [
 const mockPlannedTrainings: PlannedTraining[] = [
   {
     id: 'p1',
-    userId: 'user1',
+    user_id: 'user1', // Changed from userId to user_id
     title: 'Long Run',
     type: 'running',
     plannedDate: '2025-01-16',

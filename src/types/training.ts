@@ -13,7 +13,7 @@ export interface Exercise {
 
 export interface Training {
   id: string;
-  userId: string;
+  user_id: string; // Changed from userId to user_id for API compatibility
   title: string;
   type: TrainingType;
   date: string;
@@ -29,14 +29,14 @@ export interface Training {
   stravaLink?: string;
   garminLink?: string;
   category?: RunningCategory;
-  rating?: number; // 1-10 scale
+  rating?: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface PlannedTraining {
   id: string;
-  userId: string;
+  user_id: string; // Changed from userId to user_id for API compatibility
   title: string;
   type: TrainingType;
   plannedDate: string;
@@ -44,14 +44,6 @@ export interface PlannedTraining {
   plannedDistance?: number;
   notes?: string;
   completed: boolean;
-  completedTrainingId?: string;
-  category?: RunningCategory;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface WeeklyPlanStats {
-  totalPlannedDuration: number;
-  totalPlannedDistance: number;
-  totalSessions: number;
 }

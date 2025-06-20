@@ -89,7 +89,7 @@ const AddTraining = () => {
     console.log('Form data before submission:', formData);
 
     const trainingData = {
-      userId: 'user1', // This would come from auth in real app
+      user_id: 'user1', // Changed from userId to user_id for FastAPI compatibility
       type: formData.type as TrainingType,
       title: formData.title,
       date: formData.date,
