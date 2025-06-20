@@ -1,15 +1,22 @@
 
-FROM python:3.11-slim
+FROM node:18-alpine
 
-WORKDIR /
+WORKDIR /app
 
-COPY ../requirements.txt .
+# Copy package files
+COPY package*.json ./
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies
+RUN npm ci --proxy=null --https-proxy=null
 
-# No Copy, we mirror code to container for live reload
-#COPY . /backend
+# Copy source code
+COPY . .
 
-EXPOSE 8090
+# Build the application
+RUN npm run build
 
-CMD ["uvicorn", "backend.main:app",  "--host", "0.0.0.0" ,"--port", "8090", "--reload"]
+# Expose port
+EXPOSE 8080
+
+# Start the application
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "8091"]
