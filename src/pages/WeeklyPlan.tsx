@@ -146,7 +146,7 @@ const WeeklyPlanContent = () => {
     }
 
     const planData = {
-      userId: 'user1',
+      user_id: 'user1', // Changed from userId to user_id for FastAPI compatibility
       type: formData.type as TrainingType,
       title: formData.title,
       plannedDate: formData.plannedDate,

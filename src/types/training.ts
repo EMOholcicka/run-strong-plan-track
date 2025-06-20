@@ -1,4 +1,5 @@
 
+
 export type TrainingType = 'running' | 'cycling' | 'swimming' | 'strength' | 'yoga' | 'other';
 
 export type RunningCategory = 'aerobic' | 'intervals' | 'tempo' | 'hills';
@@ -44,6 +45,15 @@ export interface PlannedTraining {
   plannedDistance?: number;
   notes?: string;
   completed: boolean;
+  completedTrainingId?: string;
+  category?: RunningCategory;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface WeeklyPlanStats {
+  totalPlannedDuration: number;
+  totalPlannedDistance: number;
+  totalSessions: number;
+}
+
