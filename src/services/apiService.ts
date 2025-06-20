@@ -1,4 +1,3 @@
-
 // Real API service implementation
 import { Training, PlannedTraining } from '@/types/training';
 
@@ -35,8 +34,13 @@ class ApiService {
   }
 
   // Training methods
-  async getTrainings(): Promise<Training[]> {
-    return this.request<Training[]>('/trainings');
+  async getTrainings(limit?: number, offset?: number): Promise<Training[]> {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (offset) params.append('offset', offset.toString());
+    
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return this.request<Training[]>(`/trainings${queryString}`);
   }
 
   async getTrainingById(id: string): Promise<Training> {

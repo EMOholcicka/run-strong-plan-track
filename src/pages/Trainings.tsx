@@ -8,13 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/Navigation";
-import { useTrainings, useUpdateTraining, useDeleteTraining } from "@/hooks/useTrainings";
+import { useInfiniteTrainings, useUpdateTraining, useDeleteTraining } from "@/hooks/useTrainings";
 import { Training } from "@/types/training";
-import { Activity, Clock, MapPin, Zap, Calendar, Eye, Edit, Trash2, ExternalLink, Plus } from "lucide-react";
+import { Activity, Clock, MapPin, Zap, Calendar, Eye, Edit, Trash2, ExternalLink, Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Trainings = () => {
-  const { data: trainings = [] } = useTrainings();
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading
+  } = useInfiniteTrainings(10); // 10 trainings per page
+  
   const updateTraining = useUpdateTraining();
   const deleteTraining = useDeleteTraining();
   const { toast } = useToast();
@@ -36,7 +43,10 @@ const Trainings = () => {
     heartRateMax: ''
   });
   
-  const filteredTrainings = trainings.filter(training => 
+  // Flatten all pages of trainings
+  const allTrainings = data?.pages.flat() || [];
+  
+  const filteredTrainings = allTrainings.filter(training => 
     filter === 'all' || training.type === filter
   );
 
@@ -99,6 +109,20 @@ const Trainings = () => {
   const handleEditInputChange = (field: string, value: string) => {
     setEditFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading trainings...</span>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -251,8 +275,29 @@ const Trainings = () => {
             </Card>
           ))}
         </div>
+
+        {/* Load More Button */}
+        {hasNextPage && (
+          <div className="text-center mt-8">
+            <Button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              variant="outline"
+              size="lg"
+            >
+              {isFetchingNextPage ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                'Load More Trainings'
+              )}
+            </Button>
+          </div>
+        )}
         
-        {filteredTrainings.length === 0 && (
+        {filteredTrainings.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <Activity className="h-16 w-16 mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No trainings found</h3>

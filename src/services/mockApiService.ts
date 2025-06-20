@@ -1,7 +1,7 @@
 
-import { Training, PlannedTraining, TrainingType, RunningCategory } from '@/types/training';
+import { Training, PlannedTraining } from '@/types/training';
 
-// Mock data for development
+// Mock data for trainings
 const mockTrainings: Training[] = [
   {
     id: '1',
@@ -21,6 +21,7 @@ const mockTrainings: Training[] = [
     stravaLink: 'https://strava.com/activities/123',
     garminLink: 'https://garmin.com/activities/456',
     category: 'aerobic',
+    rating: 8,
     createdAt: '2025-01-15T08:00:00Z',
     updatedAt: '2025-01-15T08:00:00Z'
   },
@@ -35,168 +36,191 @@ const mockTrainings: Training[] = [
     trainerNotes: 'Focus on form over weight',
     traineeNotes: 'Challenging but manageable',
     exercises: [
-      { id: '1', name: 'Squats', sets: 3, reps: 12, weight: 80 },
-      { id: '2', name: 'Bench Press', sets: 3, reps: 10, weight: 70 }
+      {
+        id: '1',
+        name: 'Squats',
+        sets: 3,
+        reps: 12,
+        weight: 80
+      },
+      {
+        id: '2',
+        name: 'Bench Press',
+        sets: 3,
+        reps: 10,
+        weight: 70
+      }
     ],
     createdAt: '2025-01-14T18:00:00Z',
     updatedAt: '2025-01-14T18:00:00Z'
+  },
+  {
+    id: '3',
+    userId: 'user1',
+    title: 'Evening Jog',
+    type: 'running',
+    date: '2025-01-13',
+    duration: 30,
+    distance: 5.0,
+    pace: '6:00',
+    calories: 280,
+    createdAt: '2025-01-13T19:00:00Z',
+    updatedAt: '2025-01-13T19:00:00Z'
+  },
+  {
+    id: '4',
+    userId: 'user1',
+    title: 'Yoga Session',
+    type: 'yoga',
+    date: '2025-01-12',
+    duration: 45,
+    calories: 150,
+    traineeNotes: 'Very relaxing session',
+    createdAt: '2025-01-12T07:00:00Z',
+    updatedAt: '2025-01-12T07:00:00Z'
+  },
+  {
+    id: '5',
+    userId: 'user1',
+    title: 'Cycling',
+    type: 'cycling',
+    date: '2025-01-11',
+    duration: 90,
+    distance: 25.0,
+    calories: 600,
+    createdAt: '2025-01-11T16:00:00Z',
+    updatedAt: '2025-01-11T16:00:00Z'
   }
 ];
 
 const mockPlannedTrainings: PlannedTraining[] = [
   {
-    id: '1',
+    id: 'p1',
     userId: 'user1',
-    title: 'Evening Run',
+    title: 'Long Run',
     type: 'running',
     plannedDate: '2025-01-16',
-    plannedDuration: 30,
-    plannedDistance: 5,
-    notes: 'Easy recovery run',
+    plannedDuration: 60,
+    plannedDistance: 10.0,
+    notes: 'Build endurance',
     completed: false,
-    category: 'aerobic',
-    createdAt: '2025-01-15T10:00:00Z',
-    updatedAt: '2025-01-15T10:00:00Z'
-  },
-  {
-    id: '2',
-    userId: 'user1',
-    title: 'Interval Training',
-    type: 'running',
-    plannedDate: '2025-01-17',
-    plannedDuration: 40,
-    plannedDistance: 6,
-    notes: '5x1000m at 5K pace',
-    completed: false,
-    category: 'intervals',
-    createdAt: '2025-01-15T10:00:00Z',
-    updatedAt: '2025-01-15T10:00:00Z'
+    createdAt: '2025-01-10T10:00:00Z',
+    updatedAt: '2025-01-10T10:00:00Z'
   }
 ];
 
-export class MockApiService {
-  private trainings: Training[] = [...mockTrainings];
-  private plannedTrainings: PlannedTraining[] = [...mockPlannedTrainings];
+// Simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Training methods
-  async getTrainings(): Promise<Training[]> {
-    return new Promise(resolve => {
-      setTimeout(() => resolve([...this.trainings]), 100);
-    });
+class MockApiService {
+  async getTrainings(limit?: number, offset?: number): Promise<Training[]> {
+    console.log('MockApiService.getTrainings called with limit:', limit, 'offset:', offset);
+    await delay(500); // Simulate network delay
+    
+    let result = [...mockTrainings].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    if (offset) {
+      result = result.slice(offset);
+    }
+    
+    if (limit) {
+      result = result.slice(0, limit);
+    }
+    
+    return result;
   }
 
   async getTrainingById(id: string): Promise<Training> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const training = this.trainings.find(t => t.id === id);
-        if (training) {
-          resolve(training);
-        } else {
-          reject(new Error('Training not found'));
-        }
-      }, 100);
-    });
+    await delay(300);
+    const training = mockTrainings.find(t => t.id === id);
+    if (!training) {
+      throw new Error('Training not found');
+    }
+    return training;
   }
 
   async createTraining(trainingData: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>): Promise<Training> {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const newTraining: Training = {
-          ...trainingData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        this.trainings.push(newTraining);
-        resolve(newTraining);
-      }, 100);
-    });
+    console.log('MockApiService createTraining called with:', trainingData);
+    await delay(500);
+    
+    const newTraining: Training = {
+      ...trainingData,
+      id: `mock-${Date.now()}`,
+      exercises: trainingData.exercises || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    mockTrainings.push(newTraining);
+    return newTraining;
   }
 
   async updateTraining(id: string, updates: Partial<Training>): Promise<Training> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.trainings.findIndex(t => t.id === id);
-        if (index !== -1) {
-          this.trainings[index] = {
-            ...this.trainings[index],
-            ...updates,
-            updatedAt: new Date().toISOString()
-          };
-          resolve(this.trainings[index]);
-        } else {
-          reject(new Error('Training not found'));
-        }
-      }, 100);
-    });
+    await delay(300);
+    const index = mockTrainings.findIndex(t => t.id === id);
+    if (index === -1) {
+      throw new Error('Training not found');
+    }
+    
+    mockTrainings[index] = {
+      ...mockTrainings[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return mockTrainings[index];
   }
 
   async deleteTraining(id: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.trainings.findIndex(t => t.id === id);
-        if (index !== -1) {
-          this.trainings.splice(index, 1);
-          resolve();
-        } else {
-          reject(new Error('Training not found'));
-        }
-      }, 100);
-    });
+    await delay(300);
+    const index = mockTrainings.findIndex(t => t.id === id);
+    if (index === -1) {
+      throw new Error('Training not found');
+    }
+    mockTrainings.splice(index, 1);
   }
 
   // Planned training methods
   async getPlannedTrainings(): Promise<PlannedTraining[]> {
-    return new Promise(resolve => {
-      setTimeout(() => resolve([...this.plannedTrainings]), 100);
-    });
+    await delay(400);
+    return [...mockPlannedTrainings];
   }
 
   async createPlannedTraining(plannedData: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'>): Promise<PlannedTraining> {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const newPlanned: PlannedTraining = {
-          ...plannedData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        this.plannedTrainings.push(newPlanned);
-        resolve(newPlanned);
-      }, 100);
-    });
+    await delay(400);
+    const newPlanned: PlannedTraining = {
+      ...plannedData,
+      id: `planned-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    mockPlannedTrainings.push(newPlanned);
+    return newPlanned;
   }
 
   async updatePlannedTraining(id: string, updates: Partial<PlannedTraining>): Promise<PlannedTraining> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.plannedTrainings.findIndex(t => t.id === id);
-        if (index !== -1) {
-          this.plannedTrainings[index] = {
-            ...this.plannedTrainings[index],
-            ...updates,
-            updatedAt: new Date().toISOString()
-          };
-          resolve(this.plannedTrainings[index]);
-        } else {
-          reject(new Error('Planned training not found'));
-        }
-      }, 100);
-    });
+    await delay(300);
+    const index = mockPlannedTrainings.findIndex(t => t.id === id);
+    if (index === -1) {
+      throw new Error('Planned training not found');
+    }
+    
+    mockPlannedTrainings[index] = {
+      ...mockPlannedTrainings[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return mockPlannedTrainings[index];
   }
 
   async deletePlannedTraining(id: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.plannedTrainings.findIndex(t => t.id === id);
-        if (index !== -1) {
-          this.plannedTrainings.splice(index, 1);
-          resolve();
-        } else {
-          reject(new Error('Planned training not found'));
-        }
-      }, 100);
-    });
+    await delay(300);
+    const index = mockPlannedTrainings.findIndex(t => t.id === id);
+    if (index === -1) {
+      throw new Error('Planned training not found');
+    }
+    mockPlannedTrainings.splice(index, 1);
   }
 }
 

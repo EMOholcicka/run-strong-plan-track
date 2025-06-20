@@ -1,4 +1,3 @@
-
 import { mockApiService } from './mockApiService';
 import { apiService } from './apiService';
 import { Training, PlannedTraining } from '@/types/training';
@@ -20,14 +19,14 @@ export class TrainingService {
     return selectedService;
   }
 
-  async getTrainings(): Promise<Training[]> {
-    console.log('TrainingService.getTrainings called');
+  async getTrainings(limit?: number, offset?: number): Promise<Training[]> {
+    console.log('TrainingService.getTrainings called with limit:', limit, 'offset:', offset);
     const service = this.service;
     if (!service || typeof service.getTrainings !== 'function') {
       console.error('getTrainings method not available on service:', service);
       throw new Error('Training service not properly initialized');
     }
-    return service.getTrainings();
+    return service.getTrainings(limit, offset);
   }
 
   async getTrainingById(id: string): Promise<Training> {

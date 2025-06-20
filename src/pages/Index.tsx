@@ -7,7 +7,8 @@ import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
 import { Activity, Calendar, Clock, MapPin, Plus, Target, TrendingUp, Users, Zap } from "lucide-react";
 
 const Index = () => {
-  const { data: trainings = [] } = useTrainings();
+  // Limit trainings to 10 for dashboard - reasonable for landing page
+  const { data: trainings = [] } = useTrainings(10);
   const { data: plannedTrainings = [] } = usePlannedTrainings();
 
   // Get recent trainings (last 5)

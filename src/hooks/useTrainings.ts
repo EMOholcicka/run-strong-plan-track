@@ -1,5 +1,4 @@
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { trainingService } from '@/services/trainingService';
 import { Training, PlannedTraining } from '@/types/training';
 import { useToast } from '@/hooks/use-toast';
@@ -12,13 +11,27 @@ export const TRAINING_KEYS = {
   details: () => [...TRAINING_KEYS.all, 'detail'] as const,
   detail: (id: string) => [...TRAINING_KEYS.details(), id] as const,
   planned: ['planned-trainings'] as const,
+  infinite: () => [...TRAINING_KEYS.all, 'infinite'] as const,
 };
 
 // Trainings Hooks
-export const useTrainings = () => {
+export const useTrainings = (limit?: number) => {
   return useQuery({
-    queryKey: TRAINING_KEYS.lists(),
-    queryFn: () => trainingService.getTrainings(),
+    queryKey: [...TRAINING_KEYS.lists(), { limit }],
+    queryFn: () => trainingService.getTrainings(limit),
+  });
+};
+
+// Infinite query for lazy loading
+export const useInfiniteTrainings = (pageSize: number = 10) => {
+  return useInfiniteQuery({
+    queryKey: TRAINING_KEYS.infinite(),
+    queryFn: ({ pageParam = 0 }) => trainingService.getTrainings(pageSize, pageParam),
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < pageSize) return undefined;
+      return allPages.length * pageSize;
+    },
+    initialPageParam: 0,
   });
 };
 
@@ -43,6 +56,7 @@ export const useCreateTraining = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.infinite() });
       toast({
         title: "Training added",
         description: "Your training has been successfully recorded.",
@@ -68,6 +82,7 @@ export const useUpdateTraining = () => {
       trainingService.updateTraining(id, updates),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.infinite() });
       queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.detail(data.id) });
       toast({
         title: "Training updated",
@@ -92,6 +107,7 @@ export const useDeleteTraining = () => {
     mutationFn: trainingService.deleteTraining,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.lists() });
+      queryClient.invalidateQueries({ queryKey: TRAINING_KEYS.infinite() });
       toast({
         title: "Training deleted",
         description: "Your training has been successfully deleted.",
