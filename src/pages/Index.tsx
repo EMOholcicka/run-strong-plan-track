@@ -31,8 +31,9 @@ const Index = () => {
     return trainingDate >= weekStart;
   }).length;
 
+  // Only calculate distance for running activities
   const totalDistance = trainings
-    .filter(t => t.distance)
+    .filter(t => t.type === 'running' && t.distance)
     .reduce((sum, t) => sum + (t.distance || 0), 0);
 
   const totalDuration = trainings.reduce((sum, t) => sum + t.duration, 0);
@@ -77,7 +78,7 @@ const Index = () => {
             </CardContent>
           </Card>
           
-          {/* Total Distance */}
+          {/* Total Distance - Running Only */}
           <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs lg:text-sm font-medium text-green-800">Total Distance</CardTitle>

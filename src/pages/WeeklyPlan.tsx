@@ -215,8 +215,9 @@ const WeeklyPlanContent = () => {
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => openAddDialog()} size="icon">
-                <Plus className="h-4 w-4" />
+              <Button onClick={() => openAddDialog()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Training Plan
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
@@ -324,6 +325,7 @@ const WeeklyPlanContent = () => {
                 
                 <div className="flex space-x-2">
                   <Button type="submit" className="flex-1">
+                    <Plus className="h-4 w-4 mr-2" />
                     {editingId ? 'Update Plan' : 'Add Plan'}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>

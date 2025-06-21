@@ -3,17 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
-import { Calendar, Plus, Activity, Clock, MapPin } from "lucide-react";
+import { Calendar, Plus, Activity, Clock, MapPin, MoreHorizontal } from "lucide-react";
 
 const TodayTraining = () => {
   const { data: trainings = [] } = useTrainings();
   const { data: plannedTrainings = [] } = usePlannedTrainings();
   
   const today = new Date().toISOString().split('T')[0];
-  const todayTraining = trainings.find(t => t.date === today);
+  const todayTrainings = trainings.filter(t => t.date === today);
   const todayPlanned = plannedTrainings.find(p => p.plannedDate === today);
   
-  if (todayTraining) {
+  if (todayTrainings.length > 0) {
+    const displayTrainings = todayTrainings.slice(0, 2);
+    const hasMore = todayTrainings.length > 2;
+    
     return (
       <Card className="bg-green-50 border-green-200">
         <CardHeader className="pb-3">
@@ -22,27 +25,38 @@ const TodayTraining = () => {
             Today's Training - Completed
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">{todayTraining.title}</h3>
-              <div className="flex items-center space-x-4 mt-1">
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-3 w-3 text-gray-500" />
-                  <span className="text-sm text-gray-600">{todayTraining.duration} min</span>
-                </div>
-                {todayTraining.distance && (
+        <CardContent className="space-y-3">
+          {displayTrainings.map((training) => (
+            <div key={training.id} className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">{training.title}</h3>
+                <div className="flex items-center space-x-4 mt-1">
                   <div className="flex items-center space-x-1">
-                    <MapPin className="h-3 w-3 text-gray-500" />
-                    <span className="text-sm text-gray-600">{todayTraining.distance} km</span>
+                    <Clock className="h-3 w-3 text-gray-500" />
+                    <span className="text-sm text-gray-600">{training.duration} min</span>
                   </div>
-                )}
+                  {training.distance && (
+                    <div className="flex items-center space-x-1">
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      <span className="text-sm text-gray-600">{training.distance} km</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-green-600">
+                <Activity className="h-6 w-6" />
               </div>
             </div>
-            <div className="text-green-600">
-              <Activity className="h-6 w-6" />
+          ))}
+          
+          {hasMore && (
+            <div className="flex items-center justify-center pt-2 border-t">
+              <div className="flex items-center text-sm text-gray-500">
+                <MoreHorizontal className="h-4 w-4 mr-1" />
+                +{todayTrainings.length - 2} more training{todayTrainings.length - 2 > 1 ? 's' : ''}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     );
