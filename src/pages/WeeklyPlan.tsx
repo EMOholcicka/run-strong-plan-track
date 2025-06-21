@@ -34,7 +34,7 @@ const WeeklyPlan = () => {
     });
   };
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const plannedDuration = parseInt(duration, 10);
@@ -65,6 +65,7 @@ const WeeklyPlan = () => {
       setTitle("");
       setDuration("");
       setDistance("");
+      setPlannedDate(new Date().toISOString().split('T')[0]);
     } catch (error) {
       console.error('Error creating plan:', error);
       alert('Failed to create training plan. Please try again.');
@@ -112,6 +113,14 @@ const WeeklyPlan = () => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                
+                <input
+                  type="date"
+                  value={plannedDate}
+                  onChange={(e) => setPlannedDate(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
                 
@@ -177,7 +186,6 @@ const WeeklyPlan = () => {
                               variant="outline" 
                               size="sm"
                               onClick={() => {
-                                // Implement edit functionality here
                                 alert('Edit feature is not implemented yet.');
                               }}
                             >
