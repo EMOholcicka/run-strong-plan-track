@@ -1,14 +1,15 @@
+
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { TrainingType, PlannedTraining } from "@/types/training";
-import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
+import { usePlannedTrainings, useCreatePlannedTraining, useUpdatePlannedTraining, useDeletePlannedTraining } from "@/hooks/useTrainings";
 import { Plus } from "lucide-react";
 
 const WeeklyPlan = () => {
-  const [selectedType, setSelectedType] = useState<TrainingType>("");
+  const [selectedType, setSelectedType] = useState<TrainingType>("running");
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [distance, setDistance] = useState("");
@@ -19,10 +20,11 @@ const WeeklyPlan = () => {
     isLoading,
     isError,
     error,
-    createPlannedMutation,
-    updatePlannedMutation,
-    deletePlannedMutation,
   } = usePlannedTrainings();
+
+  const createPlannedMutation = useCreatePlannedTraining();
+  const updatePlannedMutation = useUpdatePlannedTraining();
+  const deletePlannedMutation = useDeletePlannedTraining();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -53,12 +55,20 @@ const WeeklyPlan = () => {
       completed: false,
     };
 
-    createPlannedMutation.mutate(newPlan);
+    try {
+      console.log('Submitting new plan:', newPlan);
+      await createPlannedMutation.mutateAsync(newPlan);
+      console.log('Plan created successfully');
 
-    setSelectedType("");
-    setTitle("");
-    setDuration("");
-    setDistance("");
+      // Reset form
+      setSelectedType("running");
+      setTitle("");
+      setDuration("");
+      setDistance("");
+    } catch (error) {
+      console.error('Error creating plan:', error);
+      alert('Failed to create training plan. Please try again.');
+    }
   };
 
   return (
@@ -88,7 +98,6 @@ const WeeklyPlan = () => {
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
-                  <option value="">Select Type</option>
                   <option value="running">Running</option>
                   <option value="cycling">Cycling</option>
                   <option value="swimming">Swimming</option>
@@ -182,9 +191,9 @@ const WeeklyPlan = () => {
                                   deletePlannedMutation.mutate(training.id);
                                 }
                               }}
-                              disabled={deletePlannedMutation.isLoading}
+                              disabled={deletePlannedMutation.isPending}
                             >
-                              {deletePlannedMutation.isLoading ? 'Deleting...' : 'Delete'}
+                              {deletePlannedMutation.isPending ? 'Deleting...' : 'Delete'}
                             </Button>
                           </div>
                         </div>
