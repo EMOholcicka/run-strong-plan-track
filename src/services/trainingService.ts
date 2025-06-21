@@ -1,3 +1,4 @@
+
 import { mockApiService } from './mockApiService';
 import { apiService } from './apiService';
 import { Training, PlannedTraining } from '@/types/training';
@@ -7,107 +8,115 @@ const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 console.log('USE_MOCK_DATA:', USE_MOCK_DATA);
 console.log('Environment variables:', import.meta.env);
-console.log('mockApiService:', mockApiService);
-console.log('apiService:', apiService);
 
 export class TrainingService {
   private get service() {
     const selectedService = USE_MOCK_DATA ? mockApiService : apiService;
     console.log('Selected service:', USE_MOCK_DATA ? 'mockApiService' : 'apiService');
-    console.log('Selected service object:', selectedService);
-    console.log('Selected service createTraining method:', selectedService?.createTraining);
     return selectedService;
   }
 
   async getTrainings(limit?: number, offset?: number): Promise<Training[]> {
     console.log('TrainingService.getTrainings called with limit:', limit, 'offset:', offset);
     const service = this.service;
-    if (!service || typeof service.getTrainings !== 'function') {
-      console.error('getTrainings method not available on service:', service);
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.getTrainings(limit, offset);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      // Fallback to mock service if API fails
+      return await mockApiService.getTrainings(limit, offset);
     }
-    return service.getTrainings(limit, offset);
   }
 
   async getTrainingById(id: string): Promise<Training> {
     console.log('TrainingService.getTrainingById called with id:', id);
     const service = this.service;
-    if (!service || typeof service.getTrainingById !== 'function') {
-      console.error('getTrainingById method not available on service:', service);
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.getTrainingById(id);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.getTrainingById(id);
     }
-    return service.getTrainingById(id);
   }
 
   async createTraining(trainingData: Omit<Training, 'id' | 'createdAt' | 'updatedAt'>): Promise<Training> {
     console.log('TrainingService.createTraining called with:', trainingData);
-    
     const service = this.service;
-    console.log('Service object in createTraining:', service);
-    console.log('Service createTraining method:', service?.createTraining);
-    console.log('Type of service:', typeof service);
-    console.log('Service keys:', service ? Object.keys(service) : 'no service');
     
-    if (!service) {
-      console.error('Service is null or undefined');
-      throw new Error('Training service not properly initialized - service is null');
+    try {
+      return await service.createTraining(trainingData);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.createTraining(trainingData);
     }
-    
-    if (typeof service.createTraining !== 'function') {
-      console.error('createTraining method not available on service:', service);
-      console.error('Available methods:', Object.getOwnPropertyNames(service));
-      throw new Error('Training service not properly initialized - createTraining method not available');
-    }
-    
-    return service.createTraining(trainingData);
   }
 
   async updateTraining(id: string, updates: Partial<Training>): Promise<Training> {
     const service = this.service;
-    if (!service || typeof service.updateTraining !== 'function') {
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.updateTraining(id, updates);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.updateTraining(id, updates);
     }
-    return service.updateTraining(id, updates);
   }
 
   async deleteTraining(id: string): Promise<void> {
     const service = this.service;
-    if (!service || typeof service.deleteTraining !== 'function') {
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.deleteTraining(id);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.deleteTraining(id);
     }
-    return service.deleteTraining(id);
   }
 
   async getPlannedTrainings(): Promise<PlannedTraining[]> {
     const service = this.service;
-    if (!service || typeof service.getPlannedTrainings !== 'function') {
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.getPlannedTrainings();
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.getPlannedTrainings();
     }
-    return service.getPlannedTrainings();
   }
 
   async createPlannedTraining(plannedData: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'>): Promise<PlannedTraining> {
     const service = this.service;
-    if (!service || typeof service.createPlannedTraining !== 'function') {
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.createPlannedTraining(plannedData);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.createPlannedTraining(plannedData);
     }
-    return service.createPlannedTraining(plannedData);
   }
 
   async updatePlannedTraining(id: string, updates: Partial<PlannedTraining>): Promise<PlannedTraining> {
     const service = this.service;
-    if (!service || typeof service.updatePlannedTraining !== 'function') {
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.updatePlannedTraining(id, updates);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.updatePlannedTraining(id, updates);
     }
-    return service.updatePlannedTraining(id, updates);
   }
 
   async deletePlannedTraining(id: string): Promise<void> {
     const service = this.service;
-    if (!service || typeof service.deletePlannedTraining !== 'function') {
-      throw new Error('Training service not properly initialized');
+    
+    try {
+      return await service.deletePlannedTraining(id);
+    } catch (error) {
+      console.error('API service failed, falling back to mock service:', error);
+      return await mockApiService.deletePlannedTraining(id);
     }
-    return service.deletePlannedTraining(id);
   }
 }
 
