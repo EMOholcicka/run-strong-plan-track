@@ -1,13 +1,80 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
-import { TrainingProvider, useTraining } from "@/contexts/TrainingContext";
+import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
 import { Calendar, Activity, Clock, MapPin, Dumbbell, Flame, Weight } from "lucide-react";
 
-const MicroCycleContent = () => {
-  const { getWeeklyStats, getPlannedWeeklyStatsForWeek } = useTraining();
-  
-  // Get stats for previous 3 weeks, current week, and next week
+const MicroCycle = () => {
+  const { data: trainings = [], isLoading: trainingsLoading } = useTrainings();
+  const { data: plannedTrainings = [], isLoading: plannedLoading } = usePlannedTrainings();
+
+  const isLoading = trainingsLoading || plannedLoading;
+
+  // Get stats for a specific week offset
+  const getWeeklyStats = (weekOffset: number) => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - currentDay + 1 + (weekOffset * 7));
+    
+    const weekStart = new Date(monday);
+    const weekEnd = new Date(monday);
+    weekEnd.setDate(monday.getDate() + 6);
+
+    // Filter trainings for this week
+    const weekTrainings = trainings.filter(training => {
+      const trainingDate = new Date(training.date);
+      return trainingDate >= weekStart && trainingDate <= weekEnd;
+    });
+
+    // Calculate actual stats
+    const runningTrainings = weekTrainings.filter(t => t.type === 'running');
+    const strengthTrainings = weekTrainings.filter(t => t.type === 'strength');
+    
+    const totalSessions = weekTrainings.length;
+    const totalDistance = runningTrainings.reduce((sum, t) => sum + (t.distance || 0), 0);
+    const runningDuration = runningTrainings.reduce((sum, t) => sum + t.duration, 0);
+    const strengthDuration = strengthTrainings.reduce((sum, t) => sum + t.duration, 0);
+    const totalDuration = weekTrainings.reduce((sum, t) => sum + t.duration, 0);
+
+    return {
+      totalSessions,
+      totalDistance,
+      runningDuration,
+      strengthDuration,
+      totalDuration
+    };
+  };
+
+  // Get planned stats for a specific week offset
+  const getPlannedWeeklyStatsForWeek = (weekOffset: number) => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - currentDay + 1 + (weekOffset * 7));
+    
+    const weekStart = new Date(monday);
+    const weekEnd = new Date(monday);
+    weekEnd.setDate(monday.getDate() + 6);
+
+    // Filter planned trainings for this week
+    const weekPlanned = plannedTrainings.filter(training => {
+      const trainingDate = new Date(training.plannedDate);
+      return trainingDate >= weekStart && trainingDate <= weekEnd;
+    });
+
+    const totalSessions = weekPlanned.length;
+    const totalPlannedDistance = weekPlanned.reduce((sum, t) => sum + (t.plannedDistance || 0), 0);
+    const totalPlannedDuration = weekPlanned.reduce((sum, t) => sum + t.plannedDuration, 0);
+
+    return {
+      totalSessions,
+      totalPlannedDistance,
+      totalPlannedDuration
+    };
+  };
+
+  // Get week data for display
   const getWeekData = (weekOffset: number) => {
     const actualStats = getWeeklyStats(weekOffset);
     const plannedStats = getPlannedWeeklyStatsForWeek(weekOffset);
@@ -15,11 +82,11 @@ const MicroCycleContent = () => {
     const today = new Date();
     const currentDay = today.getDay();
     const monday = new Date(today);
-    monday.setDate(today.getDate() - currentDay + 1 + (weekOffset * 7)); // Monday start
+    monday.setDate(today.getDate() - currentDay + 1 + (weekOffset * 7));
     
     const weekStart = new Date(monday);
     const weekEnd = new Date(monday);
-    weekEnd.setDate(monday.getDate() + 6); // Sunday end
+    weekEnd.setDate(monday.getDate() + 6);
     
     return {
       weekStart,
@@ -90,8 +157,8 @@ const MicroCycleContent = () => {
             </div>
             <span className="text-sm font-medium">
               {week.weekOffset <= 0 
-                ? week.actualStats.totalSessions - week.actualStats.strengthDuration / 60
-                : Math.round(week.plannedStats.totalSessions * 0.7) // Estimate for future weeks
+                ? week.actualStats.totalSessions - Math.round(week.actualStats.strengthDuration / 60)
+                : Math.round(week.plannedStats.totalSessions * 0.7)
               }
             </span>
           </div>
@@ -146,7 +213,7 @@ const MicroCycleContent = () => {
             </div>
             <span className="text-sm font-medium">
               {week.weekOffset <= 0 
-                ? Math.round(week.actualStats.totalDuration * 2.5) // Estimated Garmin load
+                ? Math.round(week.actualStats.totalDuration * 2.5)
                 : Math.round(week.plannedStats.totalPlannedDuration * 2.5)
               }
             </span>
@@ -159,7 +226,7 @@ const MicroCycleContent = () => {
             </div>
             <span className="text-sm font-medium">
               {week.weekOffset <= 0 
-                ? Math.round(week.actualStats.totalDuration * 8) // Estimated calories
+                ? Math.round(week.actualStats.totalDuration * 8)
                 : Math.round(week.plannedStats.totalPlannedDuration * 8)
               }
             </span>
@@ -171,13 +238,26 @@ const MicroCycleContent = () => {
               <span className="text-xs text-gray-600">Weight</span>
             </div>
             <span className="text-sm font-medium">
-              {week.weekOffset <= 0 ? "72.5 kg" : "72.3 kg"} {/* Mock data */}
+              {week.weekOffset <= 0 ? "72.5 kg" : "72.3 kg"}
             </span>
           </div>
         </div>
       </CardContent>
     </Card>
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-8">
+            <p className="text-gray-500">Loading micro cycle data...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -231,7 +311,7 @@ const MicroCycleContent = () => {
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-purple-600">
-                    {Math.round(((desktopWeeks[3].actualStats.totalDuration - desktopWeeks[2].actualStats.totalDuration) / desktopWeeks[2].actualStats.totalDuration * 100))}%
+                    {Math.round(((desktopWeeks[3].actualStats.totalDuration - desktopWeeks[2].actualStats.totalDuration) / Math.max(desktopWeeks[2].actualStats.totalDuration, 1) * 100))}%
                   </p>
                   <p className="text-sm text-gray-500">Week-over-Week Change</p>
                 </div>
@@ -241,14 +321,6 @@ const MicroCycleContent = () => {
         </Card>
       </main>
     </div>
-  );
-};
-
-const MicroCycle = () => {
-  return (
-    <TrainingProvider>
-      <MicroCycleContent />
-    </TrainingProvider>
   );
 };
 

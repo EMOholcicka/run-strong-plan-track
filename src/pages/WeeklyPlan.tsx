@@ -1,205 +1,64 @@
 import { useState } from "react";
+import { Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Navigation from "@/components/Navigation";
-import { DroppableDay } from "@/components/DroppableDay";
-import { DragDropProvider } from "@/contexts/DragDropContext";
-import { useTrainings, usePlannedTrainings, useUpdatePlannedTraining, useCreatePlannedTraining } from "@/hooks/useTrainings";
-import { PlannedTraining, RunningCategory, WeeklyPlanStats, TrainingType } from "@/types/training";
-import { Calendar, Plus, Target, TrendingUp, TrendingDown } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { TrainingType, PlannedTraining } from "@/types/training";
+import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
+import { Plus } from "lucide-react";
 
-const WeeklyPlanContent = () => {
-  const { data: plannedTrainings = [] } = usePlannedTrainings();
-  const updatePlannedTraining = useUpdatePlannedTraining();
-  const createPlannedTraining = useCreatePlannedTraining();
-  const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState({
-    type: '' as TrainingType | '',
-    title: '',
-    plannedDate: '',
-    plannedDuration: '',
-    plannedDistance: '',
-    category: '' as RunningCategory | '',
-    notes: ''
-  });
+const WeeklyPlan = () => {
+  const [selectedType, setSelectedType] = useState<TrainingType>("");
+  const [title, setTitle] = useState("");
+  const [duration, setDuration] = useState("");
+  const [distance, setDistance] = useState("");
+  const [plannedDate, setPlannedDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Get current week dates starting with Monday
-  const getCurrentWeekDates = () => {
-    const today = new Date();
-    const currentDay = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - currentDay + 1);
-    
-    const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      weekDates.push(date);
-    }
-    return weekDates;
-  };
+  const {
+    data: trainings = [],
+    isLoading,
+    isError,
+    error,
+    createPlannedMutation,
+    updatePlannedMutation,
+    deletePlannedMutation,
+  } = usePlannedTrainings();
 
-  // Get previous week dates
-  const getPreviousWeekDates = () => {
-    const today = new Date();
-    const currentDay = today.getDay();
-    const lastMonday = new Date(today);
-    lastMonday.setDate(today.getDate() - currentDay + 1 - 7);
-    
-    const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(lastMonday);
-      date.setDate(lastMonday.getDate() + i);
-      weekDates.push(date);
-    }
-    return weekDates;
-  };
-
-  const currentWeekDates = getCurrentWeekDates();
-  const previousWeekDates = getPreviousWeekDates();
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  // Calculate weekly stats
-  const calculateWeekStats = (weekDates: Date[]): WeeklyPlanStats => {
-    const weekStart = weekDates[0].toISOString().split('T')[0];
-    const weekEnd = weekDates[6].toISOString().split('T')[0];
-    
-    const weekTrainings = plannedTrainings.filter(t => 
-      t.plannedDate >= weekStart && t.plannedDate <= weekEnd
-    );
-
-    return {
-      totalPlannedDuration: weekTrainings.reduce((sum, t) => sum + t.plannedDuration, 0),
-      totalPlannedDistance: weekTrainings
-        .filter(t => t.plannedDistance)
-        .reduce((sum, t) => sum + (t.plannedDistance || 0), 0),
-      totalSessions: weekTrainings.length
-    };
-  };
-
-  const currentWeekStats = calculateWeekStats(currentWeekDates);
-  const lastWeekStats = calculateWeekStats(previousWeekDates);
-
-  const getPlannedTrainingsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return plannedTrainings.filter(training => training.plannedDate === dateStr);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const resetForm = () => {
-    setFormData({
-      type: '',
-      title: '',
-      plannedDate: '',
-      plannedDuration: '',
-      plannedDistance: '',
-      category: '',
-      notes: ''
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
     });
-    setEditingId(null);
   };
 
-  const openAddDialog = (date?: Date) => {
-    resetForm();
-    if (date) {
-      setFormData(prev => ({ ...prev, plannedDate: date.toISOString().split('T')[0] }));
-    }
-    setIsDialogOpen(true);
-  };
-
-  const openEditDialog = (training: PlannedTraining) => {
-    setFormData({
-      type: training.type,
-      title: training.title,
-      plannedDate: training.plannedDate,
-      plannedDuration: training.plannedDuration.toString(),
-      plannedDistance: training.plannedDistance?.toString() || '',
-      category: training.category || '',
-      notes: training.notes || ''
-    });
-    setEditingId(training.id);
-    setIsDialogOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     
-    console.log('Form submission started with data:', formData);
-    
-    if (!formData.type || !formData.title || !formData.plannedDate || !formData.plannedDuration) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
+    const plannedDuration = parseInt(duration, 10);
+    const plannedDistance = distance ? parseFloat(distance) : undefined;
+
+    if (isNaN(plannedDuration) || plannedDuration <= 0) {
+      alert("Please enter a valid duration in minutes.");
       return;
     }
 
-    const planData = {
-      user_id: 'user1',
-      type: formData.type as TrainingType,
-      title: formData.title,
-      plannedDate: formData.plannedDate,
-      plannedDuration: parseInt(formData.plannedDuration),
+    const newPlan: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'> = {
+      user_id: "user123",
+      type: selectedType,
+      title: title,
+      plannedDate: plannedDate,
+      plannedDuration: plannedDuration,
+      plannedDistance: plannedDistance,
       completed: false,
-      ...(formData.plannedDistance && { plannedDistance: parseFloat(formData.plannedDistance) }),
-      ...(formData.category && { category: formData.category as RunningCategory }),
-      ...(formData.notes && { notes: formData.notes })
     };
 
-    console.log('Prepared plan data:', planData);
-    console.log('Editing ID:', editingId);
+    createPlannedMutation.mutate(newPlan);
 
-    try {
-      if (editingId) {
-        console.log('Updating planned training with ID:', editingId);
-        await updatePlannedTraining.mutateAsync({ id: editingId, updates: planData });
-      } else {
-        console.log('Creating new planned training');
-        await createPlannedTraining.mutateAsync(planData);
-      }
-      
-      setIsDialogOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save training plan. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleDropTraining = (trainingId: string, newDate: string) => {
-    updatePlannedTraining.mutate({
-      id: trainingId,
-      updates: { plannedDate: newDate }
-    });
-  };
-
-  const getComparisonIcon = (current: number, previous: number) => {
-    if (current > previous) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (current < previous) return <TrendingDown className="h-4 w-4 text-red-600" />;
-    return null;
-  };
-
-  const getComparisonText = (current: number, previous: number) => {
-    if (previous === 0) return current > 0 ? '+100%' : '0%';
-    const change = ((current - previous) / previous * 100).toFixed(0);
-    return `${Number(change) >= 0 ? '+' : ''}${change}%`;
+    setSelectedType("");
+    setTitle("");
+    setDuration("");
+    setDistance("");
   };
 
   return (
@@ -207,256 +66,141 @@ const WeeklyPlanContent = () => {
       <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Weekly Training Plan</h1>
-            <p className="text-gray-600">Plan and track your weekly workouts</p>
-          </div>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => openAddDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Training Plan
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingId ? 'Edit Training Plan' : 'Add Training Plan'}
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Type *</Label>
-                    <Select value={formData.type} onValueChange={(value: any) => handleInputChange('type', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="running">Running</SelectItem>
-                        <SelectItem value="cycling">Cycling</SelectItem>
-                        <SelectItem value="swimming">Swimming</SelectItem>
-                        <SelectItem value="strength">Strength Training</SelectItem>
-                        <SelectItem value="yoga">Yoga</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="plannedDate">Date *</Label>
-                    <Input
-                      id="plannedDate"
-                      type="date"
-                      value={formData.plannedDate}
-                      onChange={(e) => handleInputChange('plannedDate', e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-
-                {formData.type === 'running' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Running Category</Label>
-                    <Select value={formData.category} onValueChange={(value: any) => handleInputChange('category', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aerobic">Aerobic</SelectItem>
-                        <SelectItem value="intervals">Intervals</SelectItem>
-                        <SelectItem value="tempo">Tempo</SelectItem>
-                        <SelectItem value="hills">Hills</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., Long Run, Upper Body"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="plannedDuration">Duration (min) *</Label>
-                    <Input
-                      id="plannedDuration"
-                      type="number"
-                      placeholder="60"
-                      value={formData.plannedDuration}
-                      onChange={(e) => handleInputChange('plannedDuration', e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  {(formData.type === 'running' || formData.type === 'cycling') && (
-                    <div className="space-y-2">
-                      <Label htmlFor="plannedDistance">Distance (km)</Label>
-                      <Input
-                        id="plannedDistance"
-                        type="number"
-                        step="0.1"
-                        placeholder="10.0"
-                        value={formData.plannedDistance}
-                        onChange={(e) => handleInputChange('plannedDistance', e.target.value)}
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Training focus, intensity, etc..."
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                  />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button type="submit" className="flex-1">
-                    <Plus className="h-4 w-4 mr-2" />
-                    {editingId ? 'Update Plan' : 'Add Plan'}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Weekly Training Plan</h1>
+          <p className="text-gray-600">Plan your training sessions for the week</p>
         </div>
 
-        {/* Weekly Summary */}
-        <Card className="mb-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              Weekly Plan Summary
+              <Calendar className="h-5 w-5 mr-2" />
+              Plan Your Week
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <p className="text-2xl font-bold text-blue-600">{Math.round(currentWeekStats.totalPlannedDuration)} min</p>
-                  {getComparisonIcon(currentWeekStats.totalPlannedDuration, lastWeekStats.totalPlannedDuration)}
-                </div>
-                <p className="text-sm text-gray-500 mb-1">Total Planned Time</p>
-                <div className="text-xs text-gray-400">
-                  vs last week: {getComparisonText(currentWeekStats.totalPlannedDuration, lastWeekStats.totalPlannedDuration)}
-                </div>
+            {/* Add Training Plan Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex gap-2">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value as TrainingType)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Type</option>
+                  <option value="running">Running</option>
+                  <option value="cycling">Cycling</option>
+                  <option value="swimming">Swimming</option>
+                  <option value="strength">Strength</option>
+                  <option value="yoga">Yoga</option>
+                  <option value="other">Other</option>
+                </select>
+                
+                <input
+                  type="text"
+                  placeholder="Training title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                
+                <input
+                  type="number"
+                  placeholder="Duration (min)"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="1"
+                  required
+                />
+                
+                {(selectedType === 'running' || selectedType === 'cycling') && (
+                  <input
+                    type="number"
+                    placeholder="Distance (km)"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                    className="w-28 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    step="0.1"
+                    min="0"
+                  />
+                )}
+                
+                <Button 
+                  type="submit" 
+                  size="sm"
+                  disabled={createPlannedMutation.isPending}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <p className="text-2xl font-bold text-green-600">{currentWeekStats.totalPlannedDistance.toFixed(1)} km</p>
-                  {getComparisonIcon(currentWeekStats.totalPlannedDistance, lastWeekStats.totalPlannedDistance)}
+            </form>
+
+            {/* Display Planned Trainings */}
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                This Week's Plan
+              </h2>
+              {isLoading ? (
+                <p>Loading planned trainings...</p>
+              ) : isError ? (
+                <p>Error: {error?.message || "Failed to load planned trainings"}</p>
+              ) : (
+                <div className="space-y-4">
+                  {trainings.map((training) => (
+                    <Card key={training.id} className="bg-gray-50 border-gray-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium text-lg">{training.title}</h3>
+                            <p className="text-sm text-gray-500">
+                              {formatDate(training.plannedDate)} - {training.type}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {training.plannedDuration} minutes
+                              {training.plannedDistance && `, ${training.plannedDistance} km`}
+                            </p>
+                          </div>
+                          <div className="space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                // Implement edit functionality here
+                                alert('Edit feature is not implemented yet.');
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this training plan?")) {
+                                  deletePlannedMutation.mutate(training.id);
+                                }
+                              }}
+                              disabled={deletePlannedMutation.isLoading}
+                            >
+                              {deletePlannedMutation.isLoading ? 'Deleting...' : 'Delete'}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {trainings.length === 0 && (
+                    <p className="text-gray-500">No trainings planned for this week.</p>
+                  )}
                 </div>
-                <p className="text-sm text-gray-500 mb-1">Total Running Distance</p>
-                <div className="text-xs text-gray-400">
-                  vs last week: {getComparisonText(currentWeekStats.totalPlannedDistance, lastWeekStats.totalPlannedDistance)}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <p className="text-2xl font-bold text-purple-600">{currentWeekStats.totalSessions}</p>
-                  {getComparisonIcon(currentWeekStats.totalSessions, lastWeekStats.totalSessions)}
-                </div>
-                <p className="text-sm text-gray-500 mb-1">Total Sessions</p>
-                <div className="text-xs text-gray-400">
-                  vs last week: {getComparisonText(currentWeekStats.totalSessions, lastWeekStats.totalSessions)}
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {plannedTrainings.filter(t => t.completed).length}
-                </p>
-                <p className="text-sm text-gray-500">Completed</p>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
-
-        {/* Current Week Calendar */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Week</h2>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            {currentWeekDates.map((date, index) => {
-              const dayTrainings = getPlannedTrainingsForDate(date);
-              const isToday = date.toDateString() === new Date().toDateString();
-              
-              return (
-                <DroppableDay
-                  key={index}
-                  date={date}
-                  dayName={dayNames[index]}
-                  trainings={dayTrainings}
-                  isToday={isToday}
-                  onAddTraining={openAddDialog}
-                  onEditTraining={openEditDialog}
-                  onDropTraining={handleDropTraining}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Previous Week Calendar */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Previous Week</h2>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            {previousWeekDates.map((date, index) => {
-              const dayTrainings = getPlannedTrainingsForDate(date);
-              
-              return (
-                <Card key={index} className="bg-gray-50">
-                  <CardHeader className="pb-3">
-                    <div className="text-center">
-                      <div className="text-sm font-medium text-gray-500">
-                        {dayNames[index]}
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {date.getDate()}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-2 min-h-[200px]">
-                    {dayTrainings.map((training) => (
-                      <div
-                        key={training.id}
-                        className="p-3 rounded-lg border bg-white opacity-75"
-                      >
-                        <div className="font-medium text-sm">{training.title}</div>
-                        <div className="text-xs text-gray-600">{training.plannedDuration} min</div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
       </main>
     </div>
-  );
-};
-
-const WeeklyPlan = () => {
-  return (
-    <DragDropProvider>
-      <WeeklyPlanContent />
-    </DragDropProvider>
   );
 };
 
