@@ -29,22 +29,36 @@ export class WeeklyPlanService {
       return todaysPlanned;
     } catch (error) {
       console.error('API service failed, using mock data for today\'s training:', error);
-      // Return mock data for today's running training
-      const mockTodayTraining: PlannedTraining = {
-        id: 'mock-today-1',
-        user_id: 'user123',
-        title: 'Morning Run',
-        type: 'running',
-        plannedDate: today,
-        plannedDuration: 45,
-        plannedDistance: 8.5,
-        notes: 'Easy pace recovery run',
-        completed: false,
-        category: 'aerobic',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      return [mockTodayTraining];
+      // Return mock data for today's running and strength training
+      const mockTodayTrainings: PlannedTraining[] = [
+        {
+          id: 'mock-today-1',
+          user_id: 'user123',
+          title: 'Morning Run',
+          type: 'running',
+          plannedDate: today,
+          plannedDuration: 45,
+          plannedDistance: 8.5,
+          notes: 'Easy pace recovery run',
+          completed: false,
+          category: 'aerobic',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: 'mock-today-2',
+          user_id: 'user123',
+          title: 'Evening Strength',
+          type: 'strength',
+          plannedDate: today,
+          plannedDuration: 60,
+          notes: 'Focus on upper body',
+          completed: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      ];
+      return mockTodayTrainings;
     }
   }
 
@@ -200,8 +214,60 @@ export class WeeklyPlanService {
     try {
       return await service.getPlannedTrainings();
     } catch (error) {
-      console.error('API service failed, falling back to mock service:', error);
-      return await mockApiService.getPlannedTrainings();
+      console.error('API service failed, using mock data for upcoming trainings:', error);
+      // Create mock upcoming training data
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dayAfter = new Date();
+      dayAfter.setDate(dayAfter.getDate() + 2);
+      const dayAfter2 = new Date();
+      dayAfter2.setDate(dayAfter2.getDate() + 3);
+      
+      const mockUpcomingTrainings: PlannedTraining[] = [
+        {
+          id: 'mock-upcoming-1',
+          user_id: 'user123',
+          title: 'Interval Training',
+          type: 'running',
+          plannedDate: tomorrow.toISOString().split('T')[0],
+          plannedDuration: 50,
+          plannedDistance: 6.0,
+          notes: 'Speed work - 8x400m intervals',
+          completed: false,
+          category: 'intervals',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: 'mock-upcoming-2',
+          user_id: 'user123',
+          title: 'Long Run',
+          type: 'running',
+          plannedDate: dayAfter.toISOString().split('T')[0],
+          plannedDuration: 90,
+          plannedDistance: 15.0,
+          notes: 'Build endurance - steady pace',
+          completed: false,
+          category: 'aerobic',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: 'mock-upcoming-3',
+          user_id: 'user123',
+          title: 'Recovery Run',
+          type: 'running',
+          plannedDate: dayAfter2.toISOString().split('T')[0],
+          plannedDuration: 30,
+          plannedDistance: 5.0,
+          notes: 'Easy recovery pace',
+          completed: false,
+          category: 'aerobic',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      ];
+      return mockUpcomingTrainings;
     }
   }
 
