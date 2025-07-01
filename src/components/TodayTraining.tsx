@@ -1,17 +1,22 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
+import { useTrainings } from "@/hooks/useTrainings";
+import { weeklyPlanService } from "@/services/weeklyPlanService";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, Plus, Activity, Clock, MapPin, MoreHorizontal } from "lucide-react";
 
 const TodayTraining = () => {
   const { data: trainings = [] } = useTrainings();
-  const { data: plannedTrainings = [] } = usePlannedTrainings();
+  
+  const { data: plannedTrainings = [] } = useQuery({
+    queryKey: ['plannedTrainings', 'today'],
+    queryFn: () => weeklyPlanService.getTodaysPlannedTrainings(),
+  });
   
   const today = new Date().toISOString().split('T')[0];
   const todayTrainings = trainings.filter(t => t.date === today);
-  const todayPlanned = plannedTrainings.find(p => p.plannedDate === today);
+  const todayPlanned = plannedTrainings.find(p => p.plannedDate === today && !p.completed);
   
   if (todayTrainings.length > 0) {
     const displayTrainings = todayTrainings.slice(0, 2);

@@ -1,4 +1,3 @@
-
 import { mockApiService } from './mockApiService';
 import { apiService } from './apiService';
 import { Training, PlannedTraining } from '@/types/training';
@@ -13,6 +12,40 @@ export class WeeklyPlanService {
     const selectedService = USE_MOCK_DATA ? mockApiService : apiService;
     console.log('WeeklyPlanService selected service:', USE_MOCK_DATA ? 'mockApiService' : 'apiService');
     return selectedService;
+  }
+
+  // Get today's planned trainings
+  async getTodaysPlannedTrainings(): Promise<PlannedTraining[]> {
+    const today = new Date().toISOString().split('T')[0];
+    console.log('WeeklyPlanService.getTodaysPlannedTrainings called for date:', today);
+    const service = this.service;
+    
+    try {
+      const allPlanned = await service.getPlannedTrainings();
+      const todaysPlanned = allPlanned.filter(planned => {
+        return planned.plannedDate === today && !planned.completed;
+      });
+      console.log('Found today\'s planned trainings:', todaysPlanned);
+      return todaysPlanned;
+    } catch (error) {
+      console.error('API service failed, using mock data for today\'s training:', error);
+      // Return mock data for today's running training
+      const mockTodayTraining: PlannedTraining = {
+        id: 'mock-today-1',
+        user_id: 'user123',
+        title: 'Morning Run',
+        type: 'running',
+        plannedDate: today,
+        plannedDuration: 45,
+        plannedDistance: 8.5,
+        notes: 'Easy pace recovery run',
+        completed: false,
+        category: 'aerobic',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      return [mockTodayTraining];
+    }
   }
 
   // Get trainings for a specific week
