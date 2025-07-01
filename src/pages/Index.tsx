@@ -1,15 +1,22 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import TodayTraining from "@/components/TodayTraining";
-import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
+import { useTrainings } from "@/hooks/useTrainings";
+import { weeklyPlanService } from "@/services/weeklyPlanService";
+import { useQuery } from "@tanstack/react-query";
 import { Activity, Calendar, Clock, MapPin, Plus, Target, TrendingUp, Users, Zap } from "lucide-react";
 
 const Index = () => {
   // Limit trainings to 10 for dashboard - reasonable for landing page
   const { data: trainings = [] } = useTrainings(10);
-  const { data: plannedTrainings = [] } = usePlannedTrainings();
+  
+  const { data: plannedTrainings = [] } = useQuery({
+    queryKey: ['plannedTrainings', 'upcoming'],
+    queryFn: () => weeklyPlanService.getAllPlannedTrainings(),
+  });
 
   // Get recent trainings (last 5)
   const recentTrainings = trainings
