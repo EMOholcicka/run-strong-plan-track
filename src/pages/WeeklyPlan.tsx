@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { TrainingType, PlannedTraining } from "@/types/training";
-import { usePlannedTrainings, useCreatePlannedTraining, useUpdatePlannedTraining, useDeletePlannedTraining } from "@/hooks/useTrainings";
+import { weeklyPlanService } from "@/services/weeklyPlanService";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 
 const WeeklyPlan = () => {
@@ -15,16 +16,32 @@ const WeeklyPlan = () => {
   const [distance, setDistance] = useState("");
   const [plannedDate, setPlannedDate] = useState(new Date().toISOString().split('T')[0]);
 
+  const queryClient = useQueryClient();
+
   const {
     data: trainings = [],
     isLoading,
     isError,
     error,
-  } = usePlannedTrainings();
+  } = useQuery({
+    queryKey: ['plannedTrainings'],
+    queryFn: () => weeklyPlanService.getAllPlannedTrainings(),
+  });
 
-  const createPlannedMutation = useCreatePlannedTraining();
-  const updatePlannedMutation = useUpdatePlannedTraining();
-  const deletePlannedMutation = useDeletePlannedTraining();
+  const createPlannedMutation = useMutation({
+    mutationFn: (newPlan: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'>) =>
+      weeklyPlanService.createPlannedTraining(newPlan),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plannedTrainings'] });
+    },
+  });
+
+  const deletePlannedMutation = useMutation({
+    mutationFn: (id: string) => weeklyPlanService.deletePlannedTraining(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plannedTrainings'] });
+    },
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

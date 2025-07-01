@@ -1,12 +1,19 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
-import { useTrainings, usePlannedTrainings } from "@/hooks/useTrainings";
+import { weeklyPlanService } from "@/services/weeklyPlanService";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, Activity, Clock, MapPin, Dumbbell, Flame, Weight } from "lucide-react";
 
 const MicroCycle = () => {
-  const { data: trainings = [], isLoading: trainingsLoading } = useTrainings();
-  const { data: plannedTrainings = [], isLoading: plannedLoading } = usePlannedTrainings();
+  const { data: trainings = [], isLoading: trainingsLoading } = useQuery({
+    queryKey: ['trainings'],
+    queryFn: () => weeklyPlanService.getAllTrainings(),
+  });
+
+  const { data: plannedTrainings = [], isLoading: plannedLoading } = useQuery({
+    queryKey: ['plannedTrainings'],
+    queryFn: () => weeklyPlanService.getAllPlannedTrainings(),
+  });
 
   const isLoading = trainingsLoading || plannedLoading;
 
