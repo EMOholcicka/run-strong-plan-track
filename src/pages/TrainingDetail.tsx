@@ -1,4 +1,3 @@
-
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,6 +108,51 @@ const TrainingDetail = () => {
         <span className="ml-2 text-sm text-gray-600">({rating}/10)</span>
       </div>
     );
+  };
+
+  const formatTrainerNotes = (notes: string) => {
+    if (!notes) return null;
+    
+    // Split by newlines and process each line
+    const lines = notes.split('\n');
+    const formattedLines = lines.map((line, index) => {
+      // Check if line starts with bullet point indicators
+      if (line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')) {
+        return (
+          <li key={index} className="ml-4">
+            {line.trim().replace(/^[•\-*]\s*/, '')}
+          </li>
+        );
+      }
+      // Regular line
+      return line.trim() ? (
+        <p key={index} className="mb-2">
+          {line}
+        </p>
+      ) : (
+        <br key={index} />
+      );
+    });
+
+    // Check if we have any list items
+    const hasListItems = lines.some(line => 
+      line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')
+    );
+
+    if (hasListItems) {
+      return (
+        <div>
+          {formattedLines.map((line, index) => {
+            if (line.type === 'li') {
+              return line;
+            }
+            return line;
+          })}
+        </div>
+      );
+    }
+
+    return <div>{formattedLines}</div>;
   };
 
   return (
@@ -406,22 +450,42 @@ const TrainingDetail = () => {
               </CardHeader>
               <CardContent>
                 {training.trainerNotes ? (
-                  <p className="text-gray-700 leading-relaxed">{training.trainerNotes}</p>
+                  <div className="text-gray-700 leading-relaxed">
+                    {formatTrainerNotes(training.trainerNotes)}
+                  </div>
                 ) : (
                   <p className="text-gray-500 italic">No trainer notes for this training.</p>
                 )}
               </CardContent>
             </Card>
 
+            {/* Merged Trainee Notes and Rating */}
             <Card>
               <CardHeader>
-                <CardTitle>Trainee Notes</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Trainee Notes</span>
+                  {training.rating && (
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 mr-1 text-yellow-500" />
+                      {renderRating(training.rating)}
+                    </div>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {training.traineeNotes ? (
                   <p className="text-gray-700 leading-relaxed">{training.traineeNotes}</p>
                 ) : (
                   <p className="text-gray-500 italic">No trainee notes for this training.</p>
+                )}
+                {training.rating && (
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <p className="text-sm text-gray-500">
+                      {training.rating <= 3 ? 'Easy session' : 
+                       training.rating <= 6 ? 'Moderate effort' : 
+                       training.rating <= 8 ? 'Hard session' : 'Very challenging'}
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
