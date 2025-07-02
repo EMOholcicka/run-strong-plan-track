@@ -26,6 +26,12 @@ export interface Training {
   traineeNotes?: string;
   heartRateAvg?: number;
   heartRateMax?: number;
+  cadenceAvg?: number;
+  cadenceMax?: number;
+  altitudeMin?: number;
+  altitudeMax?: number;
+  altitudeGain?: number;
+  altitudeLoss?: number;
   exercises: Exercise[];
   stravaLink?: string;
   garminLink?: string;

@@ -9,6 +9,8 @@ import { useState } from "react";
 import { TrainingType, RunningCategory } from "@/types/training";
 import TrainingOverviewCard from "@/components/training/TrainingOverviewCard";
 import HeartRateCard from "@/components/training/HeartRateCard";
+import CadenceCard from "@/components/training/CadenceCard";
+import AltitudeCard from "@/components/training/AltitudeCard";
 import ExercisesCard from "@/components/training/ExercisesCard";
 import TrainerNotesCard from "@/components/training/TrainerNotesCard";
 import TraineeNotesCard from "@/components/training/TraineeNotesCard";
@@ -131,9 +133,12 @@ const TrainingDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Stats */}
+          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <TrainingOverviewCard training={training} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TrainingOverviewCard training={training} />
+              <TraineeNotesCard traineeNotes={training.traineeNotes} rating={training.rating} />
+            </div>
             
             {(training.heartRateAvg || training.heartRateMax) && (
               <HeartRateCard 
@@ -142,15 +147,30 @@ const TrainingDetail = () => {
               />
             )}
 
+            {(training.cadenceAvg || training.cadenceMax) && (
+              <CadenceCard 
+                cadenceAvg={training.cadenceAvg} 
+                cadenceMax={training.cadenceMax} 
+              />
+            )}
+
+            {(training.altitudeMin || training.altitudeMax || training.altitudeGain || training.altitudeLoss) && (
+              <AltitudeCard 
+                altitudeMin={training.altitudeMin}
+                altitudeMax={training.altitudeMax}
+                altitudeGain={training.altitudeGain}
+                altitudeLoss={training.altitudeLoss}
+              />
+            )}
+
             {training.exercises && training.exercises.length > 0 && (
               <ExercisesCard exercises={training.exercises} />
             )}
           </div>
 
-          {/* Notes Sidebar */}
+          {/* Sidebar */}
           <div className="space-y-6">
             <TrainerNotesCard trainerNotes={training.trainerNotes} />
-            <TraineeNotesCard traineeNotes={training.traineeNotes} rating={training.rating} />
             
             {(training.stravaLink || training.garminLink) && (
               <ExternalLinksCard 
