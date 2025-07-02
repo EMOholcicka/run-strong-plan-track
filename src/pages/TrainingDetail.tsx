@@ -1,21 +1,13 @@
 
 import { useParams, Link, Navigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import { useTraining, useUpdateTraining } from "@/hooks/useTrainings";
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { TrainingType, RunningCategory } from "@/types/training";
-import { useToast } from "@/hooks/use-toast";
 import TrainingOverviewCard from "@/components/training/TrainingOverviewCard";
-import TrainingRatingCard from "@/components/training/TrainingRatingCard";
 import HeartRateCard from "@/components/training/HeartRateCard";
 import ExercisesCard from "@/components/training/ExercisesCard";
 import TrainerNotesCard from "@/components/training/TrainerNotesCard";
@@ -28,7 +20,6 @@ const TrainingDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { data: training, isLoading } = useTraining(id || '');
   const updateTraining = useUpdateTraining();
-  const { toast } = useToast();
   const [isEditOpen, setIsEditOpen] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -143,8 +134,6 @@ const TrainingDetail = () => {
           {/* Main Stats */}
           <div className="lg:col-span-2 space-y-6">
             <TrainingOverviewCard training={training} />
-            
-            {training.rating && <TrainingRatingCard rating={training.rating} />}
             
             {(training.heartRateAvg || training.heartRateMax) && (
               <HeartRateCard 

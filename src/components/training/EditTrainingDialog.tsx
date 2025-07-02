@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit } from "lucide-react";
+import RichTextarea from "@/components/ui/rich-textarea";
 
 interface EditTrainingDialogProps {
   isOpen: boolean;
@@ -132,21 +132,19 @@ const EditTrainingDialog = ({
 
           <div className="space-y-2">
             <Label htmlFor="trainerNotes">Trainer Notes</Label>
-            <Textarea
-              id="trainerNotes"
-              placeholder="Coach notes and feedback..."
+            <RichTextarea
               value={formData.trainerNotes}
-              onChange={(e) => onInputChange('trainerNotes', e.target.value)}
+              onChange={(value) => onInputChange('trainerNotes', value)}
+              placeholder="Coach notes and feedback... Use toolbar for formatting"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="traineeNotes">Trainee Notes</Label>
-            <Textarea
-              id="traineeNotes"
-              placeholder="Your thoughts and feelings about the training..."
+            <RichTextarea
               value={formData.traineeNotes}
-              onChange={(e) => onInputChange('traineeNotes', e.target.value)}
+              onChange={(value) => onInputChange('traineeNotes', value)}
+              placeholder="Your thoughts and feelings about the training... Use toolbar for formatting"
             />
           </div>
           
