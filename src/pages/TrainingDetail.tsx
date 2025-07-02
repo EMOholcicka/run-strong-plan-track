@@ -1,4 +1,3 @@
-
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -135,10 +134,8 @@ const TrainingDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TrainingOverviewCard training={training} />
-              <TraineeNotesCard traineeNotes={training.traineeNotes} rating={training.rating} />
-            </div>
+            <TrainingOverviewCard training={training} />
+            <TraineeNotesCard traineeNotes={training.traineeNotes} rating={training.rating} />
             
             {(training.heartRateAvg || training.heartRateMax) && (
               <HeartRateCard 
