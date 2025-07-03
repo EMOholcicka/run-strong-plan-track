@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextarea from "@/components/ui/rich-textarea";
 import {
   Dialog,
   DialogContent,
@@ -93,7 +93,7 @@ const AddTrainingModal = ({ isOpen, onClose, onSave, selectedDay }: AddTrainingM
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Training - {selectedDay}</DialogTitle>
         </DialogHeader>
@@ -187,12 +187,11 @@ const AddTrainingModal = ({ isOpen, onClose, onSave, selectedDay }: AddTrainingM
 
           <div>
             <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
+            <RichTextarea
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, notes: value })}
               placeholder="Zone 2, Hill run, Technique focus..."
-              rows={3}
+              className="mt-1"
             />
           </div>
 

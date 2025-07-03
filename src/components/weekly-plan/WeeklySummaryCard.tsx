@@ -22,6 +22,19 @@ const WeeklySummaryCard = ({ weekData }: WeeklySummaryCardProps) => {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
+  const getIntensityBadgeStyles = (intensity: string) => {
+    switch (intensity.toLowerCase()) {
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100';
+      case 'medium':
+        return 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100';
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Weekly Overview */}
@@ -84,15 +97,15 @@ const WeeklySummaryCard = ({ weekData }: WeeklySummaryCardProps) => {
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Badge className="bg-green-100 text-green-800">Low</Badge>
+              <Badge className={getIntensityBadgeStyles('Low')}>Low</Badge>
               <span className="font-semibold">{summary.intensityBreakdown.low}</span>
             </div>
             <div className="flex items-center justify-between">
-              <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>
+              <Badge className={getIntensityBadgeStyles('Medium')}>Medium</Badge>
               <span className="font-semibold">{summary.intensityBreakdown.medium}</span>
             </div>
             <div className="flex items-center justify-between">
-              <Badge className="bg-red-100 text-red-800">High</Badge>
+              <Badge className={getIntensityBadgeStyles('High')}>High</Badge>
               <span className="font-semibold">{summary.intensityBreakdown.high}</span>
             </div>
           </div>
