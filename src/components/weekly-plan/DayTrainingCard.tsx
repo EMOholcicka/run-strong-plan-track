@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Clock, MapPin, Heart, Target, Edit2, Trash2 } from "lucide-react";
 import { DayTraining, IntensityLevel, TrainingStatus } from "@/types/weeklyPlan";
+import EditTrainingModal from "./EditTrainingModal";
 
 interface DayTrainingCardProps {
   day: string;
@@ -25,7 +26,7 @@ const DayTrainingCard = ({
   onUpdateTraining,
   onDeleteTraining
 }: DayTrainingCardProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const getStatusIcon = (status: TrainingStatus) => {
     switch (status) {
@@ -76,6 +77,22 @@ const DayTrainingCard = ({
     return monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const formatNotesForDisplay = (notes?: string) => {
+    if (!notes) return null;
+    
+    // Replace bullet points with line breaks for display
+    return notes
+      .replace(/• /g, '\n• ')
+      .replace(/^\n/, '') // Remove leading newline
+      .split('\n')
+      .filter(line => line.trim())
+      .map((line, index) => (
+        <div key={index} className="text-sm text-gray-700">
+          {line.trim()}
+        </div>
+      ));
+  };
+
   if (!training) {
     return (
       <Card className="border-dashed border-2 border-gray-200 hover:border-gray-300 transition-colors">
@@ -101,83 +118,96 @@ const DayTrainingCard = ({
   }
 
   return (
-    <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900">{day}</h3>
-                <p className="text-sm text-gray-500">{getCurrentDate()}</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">{getStatusIcon(training.status)}</span>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeleteTraining(training.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+    <>
+      <Card className="border-l-4 border-l-blue-500 hover:shadow-md transition-shadow">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">{day}</h3>
+                  <p className="text-sm text-gray-500">{getCurrentDate()}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg">{getStatusIcon(training.status)}</span>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditModalOpen(true)}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteTraining(training.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <Badge className={getActivityTypeColor(training.activityType)}>
-                  {training.activityType}
-                </Badge>
-                <Badge className={getIntensityColor(training.intensity)} variant="outline">
-                  {training.intensity}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {training.duration && (
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <span>{training.duration} min</span>
-                  </div>
-                )}
-                {training.distance && (
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                    <span>{training.distance} km</span>
-                  </div>
-                )}
-                {training.heartRateZone && (
-                  <div className="flex items-center space-x-2">
-                    <Heart className="h-4 w-4 text-gray-400" />
-                    <span>Zone {training.heartRateZone}</span>
-                  </div>
-                )}
-                {training.rpe && (
-                  <div className="flex items-center space-x-2">
-                    <Target className="h-4 w-4 text-gray-400" />
-                    <span>RPE {training.rpe}/10</span>
-                  </div>
-                )}
-              </div>
-
-              {training.notes && (
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <p className="text-sm text-gray-700">{training.notes}</p>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Badge className={getActivityTypeColor(training.activityType)}>
+                    {training.activityType}
+                  </Badge>
+                  <Badge className={getIntensityColor(training.intensity)} variant="outline">
+                    {training.intensity}
+                  </Badge>
                 </div>
-              )}
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  {training.duration && (
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span>{training.duration} min</span>
+                    </div>
+                  )}
+                  {training.distance && (
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span>{training.distance} km</span>
+                    </div>
+                  )}
+                  {training.heartRateZone && (
+                    <div className="flex items-center space-x-2">
+                      <Heart className="h-4 w-4 text-gray-400" />
+                      <span>Zone {training.heartRateZone}</span>
+                    </div>
+                  )}
+                  {training.rpe && (
+                    <div className="flex items-center space-x-2">
+                      <Target className="h-4 w-4 text-gray-400" />
+                      <span>RPE {training.rpe}/10</span>
+                    </div>
+                  )}
+                </div>
+
+                {training.notes && (
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    {formatNotesForDisplay(training.notes)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Edit Training Modal */}
+      <EditTrainingModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={(updatedTraining) => {
+          onUpdateTraining(updatedTraining);
+          setIsEditModalOpen(false);
+        }}
+        training={training}
+      />
+    </>
   );
 };
 
