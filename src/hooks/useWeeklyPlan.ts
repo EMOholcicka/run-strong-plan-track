@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
-import { WeeklyPlanData, DayTraining, ActivityType, IntensityLevel } from '@/types/weeklyPlan';
+import { WeeklyPlanData, DayTraining } from '@/types/weeklyPlan';
+import { weeklyPlanService } from '@/services/weeklyPlanService';
 
 export const useWeeklyPlan = (weekOffset: number = 0) => {
   const [weekData, setWeekData] = useState<WeeklyPlanData>({
@@ -40,195 +42,178 @@ export const useWeeklyPlan = (weekOffset: number = 0) => {
     },
   });
 
-  // Mock data for demonstration
+  const [loading, setLoading] = useState(true);
+
+  // Load weekly plan data
   useEffect(() => {
-    const mockData: WeeklyPlanData = {
-      weekOffset,
-      days: {
-        Monday: {
-          id: 'mon-1',
-          day: 'Monday',
-          activityType: 'Easy Run',
-          duration: 45,
-          distance: 6.5,
-          intensity: 'Low',
-          heartRateZone: '2',
-          rpe: 4,
-          notes: 'Zone 2 base building run',
-          status: 'completed',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        Tuesday: {
-          id: 'tue-1',
-          day: 'Tuesday',
-          activityType: 'Intervals',
-          duration: 60,
-          distance: 8.0,
-          intensity: 'High',
-          heartRateZone: '4-5',
-          rpe: 8,
-          notes: '6x800m @ 5K pace with 2min recovery',
-          status: 'planned',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        Wednesday: {
-          id: 'wed-1',
-          day: 'Wednesday',
-          activityType: 'Cross Training',
-          duration: 30,
-          intensity: 'Low',
-          rpe: 3,
-          notes: 'Swimming or cycling',
-          status: 'planned',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        Thursday: {
-          id: 'thu-1',
-          day: 'Thursday',
-          activityType: 'Tempo Run',
-          duration: 50,
-          distance: 7.5,
-          intensity: 'Medium',
-          heartRateZone: '3-4',
-          rpe: 7,
-          notes: '20min tempo @ threshold pace',
-          status: 'planned',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        Friday: {
-          id: 'fri-1',
-          day: 'Friday',
-          activityType: 'Rest',
-          intensity: 'Low',
-          notes: 'Complete rest day',
-          status: 'planned',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        Saturday: {
-          id: 'sat-1',
-          day: 'Saturday',
-          activityType: 'Long Run',
-          duration: 90,
-          distance: 15.0,
-          intensity: 'Low',
-          heartRateZone: '1-2',
-          rpe: 5,
-          notes: 'Steady aerobic pace, focus on form',
-          status: 'planned',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        Sunday: {
-          id: 'sun-1',
-          day: 'Sunday',
-          activityType: 'Strength Training',
-          duration: 45,
-          intensity: 'Medium',
-          rpe: 6,
-          notes: 'Lower body focus',
-          status: 'planned',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      },
-      summary: {
-        totalTrainingDays: 6,
-        plannedTrainingDays: 6,
-        completedTrainingDays: 1,
-        missedTrainingDays: 0,
-        totalDistance: 37.0,
-        totalDuration: 320,
-        trainingLoad: 420,
-        restDays: 1,
-        intensityBreakdown: {
-          low: 3,
-          medium: 2,
-          high: 1,
-        },
-        activityBreakdown: {
-          'Easy Run': 1,
-          'Intervals': 1,
-          'Tempo Run': 1,
-          'Long Run': 1,
-          'Hill Run': 0,
-          'Strength Training': 1,
-          'Cross Training': 1,
-          'Rest': 1,
-        },
-      },
+    const loadWeeklyPlan = async () => {
+      setLoading(true);
+      try {
+        const data = await weeklyPlanService.getWeeklyPlan(weekOffset);
+        setWeekData(data);
+      } catch (error) {
+        console.error('Failed to load weekly plan:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setWeekData(mockData);
+    loadWeeklyPlan();
   }, [weekOffset]);
 
-  const addTraining = (day: string, trainingData: any) => {
+  const addTraining = async (day: string, trainingData: any) => {
     const newTraining: DayTraining = {
       id: `${day.toLowerCase()}-${Date.now()}`,
       day,
       ...trainingData,
+      status: 'planned',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    setWeekData(prev => ({
-      ...prev,
-      days: {
-        ...prev.days,
-        [day]: newTraining,
-      },
-    }));
-
-    // Recalculate summary
-    updateSummary();
-  };
-
-  const updateTraining = (dayTraining: DayTraining) => {
-    setWeekData(prev => ({
-      ...prev,
-      days: {
-        ...prev.days,
-        [dayTraining.day]: {
-          ...dayTraining,
-          updatedAt: new Date().toISOString(),
+    try {
+      const savedTraining = await weeklyPlanService.saveDayTraining(newTraining);
+      
+      setWeekData(prev => ({
+        ...prev,
+        days: {
+          ...prev.days,
+          [day]: savedTraining,
         },
-      },
-    }));
+      }));
 
-    // Recalculate summary
-    updateSummary();
+      updateSummary();
+    } catch (error) {
+      console.error('Failed to add training:', error);
+      // Optimistic update even if API fails
+      setWeekData(prev => ({
+        ...prev,
+        days: {
+          ...prev.days,
+          [day]: newTraining,
+        },
+      }));
+      updateSummary();
+    }
   };
 
-  const deleteTraining = (id: string) => {
+  const updateTraining = async (dayTraining: DayTraining) => {
+    try {
+      const updatedTraining = await weeklyPlanService.saveDayTraining({
+        ...dayTraining,
+        updatedAt: new Date().toISOString(),
+      });
+
+      setWeekData(prev => ({
+        ...prev,
+        days: {
+          ...prev.days,
+          [dayTraining.day]: updatedTraining,
+        },
+      }));
+
+      updateSummary();
+    } catch (error) {
+      console.error('Failed to update training:', error);
+      // Optimistic update even if API fails
+      setWeekData(prev => ({
+        ...prev,
+        days: {
+          ...prev.days,
+          [dayTraining.day]: {
+            ...dayTraining,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      }));
+      updateSummary();
+    }
+  };
+
+  const deleteTraining = async (id: string) => {
     const dayToUpdate = Object.keys(weekData.days).find(day => 
       weekData.days[day]?.id === id
     );
 
     if (dayToUpdate) {
-      setWeekData(prev => ({
-        ...prev,
-        days: {
-          ...prev.days,
-          [dayToUpdate]: null,
-        },
-      }));
+      try {
+        await weeklyPlanService.deleteDayTraining(id);
+        
+        setWeekData(prev => ({
+          ...prev,
+          days: {
+            ...prev.days,
+            [dayToUpdate]: null,
+          },
+        }));
 
-      // Recalculate summary
-      updateSummary();
+        updateSummary();
+      } catch (error) {
+        console.error('Failed to delete training:', error);
+        // Optimistic update even if API fails
+        setWeekData(prev => ({
+          ...prev,
+          days: {
+            ...prev.days,
+            [dayToUpdate]: null,
+          },
+        }));
+        updateSummary();
+      }
     }
   };
 
   const updateSummary = () => {
-    // This would normally recalculate the summary based on current days
-    // For now, we'll keep it simple and use mock data
+    setWeekData(prev => {
+      const days = Object.values(prev.days).filter(Boolean) as DayTraining[];
+      
+      const totalTrainingDays = days.length;
+      const completedTrainingDays = days.filter(d => d.status === 'completed').length;
+      const missedTrainingDays = days.filter(d => d.status === 'missed').length;
+      const plannedTrainingDays = days.filter(d => d.status === 'planned').length;
+      
+      const totalDistance = days.reduce((sum, d) => sum + (d.distance || 0), 0);
+      const totalDuration = days.reduce((sum, d) => sum + (d.duration || 0), 0);
+      const trainingLoad = days.reduce((sum, d) => sum + ((d.rpe || 5) * (d.duration || 30)), 0);
+      
+      const intensityBreakdown = {
+        low: days.filter(d => d.intensity === 'Low').length,
+        medium: days.filter(d => d.intensity === 'Medium').length,
+        high: days.filter(d => d.intensity === 'High').length,
+      };
+      
+      const activityBreakdown = {
+        'Easy Run': days.filter(d => d.activityType === 'Easy Run').length,
+        'Intervals': days.filter(d => d.activityType === 'Intervals').length,
+        'Tempo Run': days.filter(d => d.activityType === 'Tempo Run').length,
+        'Long Run': days.filter(d => d.activityType === 'Long Run').length,
+        'Hill Run': days.filter(d => d.activityType === 'Hill Run').length,
+        'Strength Training': days.filter(d => d.activityType === 'Strength Training').length,
+        'Cross Training': days.filter(d => d.activityType === 'Cross Training').length,
+        'Rest': days.filter(d => d.activityType === 'Rest').length,
+      };
+      
+      return {
+        ...prev,
+        summary: {
+          totalTrainingDays,
+          plannedTrainingDays,
+          completedTrainingDays,
+          missedTrainingDays,
+          totalDistance,
+          totalDuration,
+          trainingLoad,
+          restDays: 7 - totalTrainingDays,
+          intensityBreakdown,
+          activityBreakdown,
+        },
+      };
+    });
   };
 
   return {
     weekData,
+    loading,
     updateTraining,
     addTraining,
     deleteTraining,
