@@ -5,8 +5,10 @@ import { DayTraining, WeeklyPlanData } from '@/types/weeklyPlan';
 
 // Configuration flag to switch between mock and real API
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 console.log('WeeklyPlanService USE_MOCK_DATA:', USE_MOCK_DATA);
+console.log('WeeklyPlanService API_BASE_URL:', API_BASE_URL);
 
 export class WeeklyPlanService {
   private get service() {
@@ -51,27 +53,49 @@ export class WeeklyPlanService {
     };
   }
 
+  // Make API request with proper error handling
+  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const token = localStorage.getItem('authToken');
+    
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    console.log('WeeklyPlanService making API request to:', url, 'with config:', config);
+
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+
   // Get weekly plan data for a specific week
   async getWeeklyPlan(weekOffset: number = 0): Promise<WeeklyPlanData> {
     console.log('WeeklyPlanService.getWeeklyPlan called for week offset:', weekOffset);
     
     try {
       // Try API first
-      const response = await fetch(`/api/weekly-plan?week_offset=${weekOffset}`);
-      if (response.ok) {
-        const data = await response.json();
-        // Convert API response to our format
-        const convertedDays: any = {};
-        Object.keys(data.days).forEach(day => {
-          convertedDays[day] = data.days[day] ? this.convertFromApiFormat(data.days[day]) : null;
-        });
-        
-        return {
-          ...data,
-          days: convertedDays
-        };
-      }
-      throw new Error('API request failed');
+      const data = await this.apiRequest<any>(`/weekly-plan?week_offset=${weekOffset}`);
+      
+      // Convert API response to our format
+      const convertedDays: any = {};
+      Object.keys(data.days).forEach(day => {
+        convertedDays[day] = data.days[day] ? this.convertFromApiFormat(data.days[day]) : null;
+      });
+      
+      return {
+        ...data,
+        days: convertedDays
+      };
     } catch (error) {
       console.error('API failed, using mock data for weekly plan:', error);
       return this.getMockWeeklyPlan(weekOffset);
@@ -85,19 +109,12 @@ export class WeeklyPlanService {
     try {
       // Try API first
       const apiData = this.convertToApiFormat(dayTraining);
-      const response = await fetch('/api/day-training', {
+      const result = await this.apiRequest<any>('/day-training', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(apiData),
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        return this.convertFromApiFormat(result);
-      }
-      throw new Error('API request failed');
+      return this.convertFromApiFormat(result);
     } catch (error) {
       console.error('API failed, using mock save for day training:', error);
       // Return the training as-is for mock behavior
@@ -114,13 +131,9 @@ export class WeeklyPlanService {
     
     try {
       // Try API first
-      const response = await fetch(`/api/day-training/${id}`, {
+      await this.apiRequest<void>(`/day-training/${id}`, {
         method: 'DELETE',
       });
-      
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
     } catch (error) {
       console.error('API failed for delete day training:', error);
       // For mock, we just log - the UI will handle the optimistic update
