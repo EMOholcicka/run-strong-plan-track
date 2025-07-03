@@ -1,238 +1,133 @@
 
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus, Clock, MapPin, Heart, Target, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/Navigation";
-import { TrainingType, PlannedTraining } from "@/types/training";
-import { weeklyPlanService } from "@/services/weeklyPlanService";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import DayTrainingCard from "@/components/weekly-plan/DayTrainingCard";
+import WeeklySummaryCard from "@/components/weekly-plan/WeeklySummaryCard";
+import AddTrainingModal from "@/components/weekly-plan/AddTrainingModal";
+import { useWeeklyPlan } from "@/hooks/useWeeklyPlan";
 
 const WeeklyPlan = () => {
-  const [selectedType, setSelectedType] = useState<TrainingType>("running");
-  const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState("");
-  const [distance, setDistance] = useState("");
-  const [plannedDate, setPlannedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedWeek, setSelectedWeek] = useState(0); // 0 = current week, 1 = next week, -1 = last week
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  
+  const { weekData, updateTraining, addTraining, deleteTraining } = useWeeklyPlan(selectedWeek);
 
-  const queryClient = useQueryClient();
-
-  const {
-    data: trainings = [],
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ['plannedTrainings'],
-    queryFn: () => weeklyPlanService.getAllPlannedTrainings(),
-  });
-
-  const createPlannedMutation = useMutation({
-    mutationFn: (newPlan: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'>) =>
-      weeklyPlanService.createPlannedTraining(newPlan),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plannedTrainings'] });
-    },
-  });
-
-  const deletePlannedMutation = useMutation({
-    mutationFn: (id: string) => weeklyPlanService.deletePlannedTraining(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plannedTrainings'] });
-    },
-  });
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
+  const getWeekDateRange = () => {
+    const today = new Date();
+    const currentDay = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - currentDay + 1 + (selectedWeek * 7));
     
-    const plannedDuration = parseInt(duration, 10);
-    const plannedDistance = distance ? parseFloat(distance) : undefined;
-
-    if (isNaN(plannedDuration) || plannedDuration <= 0) {
-      alert("Please enter a valid duration in minutes.");
-      return;
-    }
-
-    const newPlan: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'> = {
-      user_id: "user123",
-      type: selectedType,
-      title: title,
-      plannedDate: plannedDate,
-      plannedDuration: plannedDuration,
-      plannedDistance: plannedDistance,
-      completed: false,
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    
+    return {
+      start: monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      end: sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     };
-
-    try {
-      console.log('Submitting new plan:', newPlan);
-      await createPlannedMutation.mutateAsync(newPlan);
-      console.log('Plan created successfully');
-
-      // Reset form
-      setSelectedType("running");
-      setTitle("");
-      setDuration("");
-      setDistance("");
-      setPlannedDate(new Date().toISOString().split('T')[0]);
-    } catch (error) {
-      console.error('Error creating plan:', error);
-      alert('Failed to create training plan. Please try again.');
-    }
   };
+
+  const handleAddTraining = (day: string) => {
+    setSelectedDay(day);
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveTraining = (trainingData: any) => {
+    addTraining(selectedDay!, trainingData);
+    setIsAddModalOpen(false);
+    setSelectedDay(null);
+  };
+
+  const weekRange = getWeekDateRange();
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Weekly Training Plan</h1>
-          <p className="text-gray-600">Plan your training sessions for the week</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              Plan Your Week
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Add Training Plan Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex gap-2">
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value as TrainingType)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="running">Running</option>
-                  <option value="cycling">Cycling</option>
-                  <option value="swimming">Swimming</option>
-                  <option value="strength">Strength</option>
-                  <option value="yoga">Yoga</option>
-                  <option value="other">Other</option>
-                </select>
-                
-                <input
-                  type="text"
-                  placeholder="Training title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                
-                <input
-                  type="date"
-                  value={plannedDate}
-                  onChange={(e) => setPlannedDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                
-                <input
-                  type="number"
-                  placeholder="Duration (min)"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="1"
-                  required
-                />
-                
-                {(selectedType === 'running' || selectedType === 'cycling') && (
-                  <input
-                    type="number"
-                    placeholder="Distance (km)"
-                    value={distance}
-                    onChange={(e) => setDistance(e.target.value)}
-                    className="w-28 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    step="0.1"
-                    min="0"
-                  />
-                )}
-                
-                <Button 
-                  type="submit" 
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Weekly Training Plan</h1>
+              <p className="text-gray-600">Managing training schedule for athlete</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
                   size="sm"
-                  disabled={createPlannedMutation.isPending}
+                  onClick={() => setSelectedWeek(selectedWeek - 1)}
                 >
-                  <Plus className="h-4 w-4" />
+                  ← Previous
+                </Button>
+                <Badge variant="outline" className="text-sm">
+                  {weekRange.start} - {weekRange.end}
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedWeek(selectedWeek + 1)}
+                >
+                  Next →
                 </Button>
               </div>
-            </form>
-
-            {/* Display Planned Trainings */}
-            <div className="mt-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                This Week's Plan
-              </h2>
-              {isLoading ? (
-                <p>Loading planned trainings...</p>
-              ) : isError ? (
-                <p>Error: {error?.message || "Failed to load planned trainings"}</p>
-              ) : (
-                <div className="space-y-4">
-                  {trainings.map((training) => (
-                    <Card key={training.id} className="bg-gray-50 border-gray-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-lg">{training.title}</h3>
-                            <p className="text-sm text-gray-500">
-                              {formatDate(training.plannedDate)} - {training.type}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {training.plannedDuration} minutes
-                              {training.plannedDistance && `, ${training.plannedDistance} km`}
-                            </p>
-                          </div>
-                          <div className="space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                alert('Edit feature is not implemented yet.');
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this training plan?")) {
-                                  deletePlannedMutation.mutate(training.id);
-                                }
-                              }}
-                              disabled={deletePlannedMutation.isPending}
-                            >
-                              {deletePlannedMutation.isPending ? 'Deleting...' : 'Delete'}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  {trainings.length === 0 && (
-                    <p className="text-gray-500">No trainings planned for this week.</p>
-                  )}
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Daily Training View */}
+          <div className="lg:col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Daily Training Schedule
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {days.map((day, index) => (
+                    <DayTrainingCard
+                      key={day}
+                      day={day}
+                      dayIndex={index}
+                      training={weekData.days[day]}
+                      selectedWeek={selectedWeek}
+                      onAddTraining={() => handleAddTraining(day)}
+                      onUpdateTraining={updateTraining}
+                      onDeleteTraining={deleteTraining}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Weekly Summary Sidebar */}
+          <div className="lg:col-span-1">
+            <WeeklySummaryCard weekData={weekData} />
+          </div>
+        </div>
+
+        {/* Add Training Modal */}
+        <AddTrainingModal
+          isOpen={isAddModalOpen}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setSelectedDay(null);
+          }}
+          onSave={handleSaveTraining}
+          selectedDay={selectedDay}
+        />
       </main>
     </div>
   );
