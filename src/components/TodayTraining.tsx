@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -9,9 +10,11 @@ import { Calendar, Plus, Activity, Clock, MapPin, MoreHorizontal } from "lucide-
 const TodayTraining = () => {
   const { data: trainings = [] } = useTrainings();
   
+  // Use a specific query key for today's planned trainings to avoid conflicts
   const { data: plannedTrainings = [] } = useQuery({
-    queryKey: ['plannedTrainings', 'today'],
+    queryKey: ['todayPlannedTrainings'],
     queryFn: () => weeklyPlanService.getTodaysPlannedTrainings(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
   const today = new Date().toISOString().split('T')[0];

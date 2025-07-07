@@ -10,12 +10,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Activity, Calendar, Clock, MapPin, Plus, Target, TrendingUp, Users, Zap } from "lucide-react";
 
 const Index = () => {
-  // Limit trainings to 10 for dashboard - reasonable for landing page
+  // Get all trainings with limit for dashboard
   const { data: trainings = [] } = useTrainings(10);
   
+  // Get planned trainings - use a single consolidated call
   const { data: plannedTrainings = [] } = useQuery({
-    queryKey: ['plannedTrainings', 'upcoming'],
+    queryKey: ['dashboardPlannedTrainings'],
     queryFn: () => weeklyPlanService.getAllPlannedTrainings(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Get recent trainings (last 5)
