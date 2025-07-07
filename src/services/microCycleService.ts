@@ -1,5 +1,4 @@
-
-import { apiService } from './apiService';
+import { apiClient } from './api';
 
 export interface WeekStats {
   week_offset: number;
@@ -29,7 +28,7 @@ class MicroCycleService {
     console.log('MicroCycleService: Fetching micro cycle data from API');
     
     try {
-      const response = await apiService.get<MicroCycleData>('/micro-cycle');
+      const response = await apiClient.get<MicroCycleData>('/micro-cycle');
       
       console.log('MicroCycleService: API response received', response);
       return response.data;
