@@ -29,12 +29,10 @@ class MicroCycleService {
     console.log('MicroCycleService: Fetching micro cycle data from API');
     
     try {
-      const response = await apiService.request<MicroCycleData>('/micro-cycle', {
-        method: 'GET',
-      });
+      const response = await apiService.get<MicroCycleData>('/micro-cycle');
       
       console.log('MicroCycleService: API response received', response);
-      return response;
+      return response.data;
     } catch (error) {
       console.error('MicroCycleService: API call failed, using mock data', error);
       return this.getMockData();
