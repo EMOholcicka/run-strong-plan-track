@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Trainings from "./pages/Trainings";
 import TrainingDetail from "./pages/TrainingDetail";
@@ -32,14 +33,14 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/trainings" element={<Trainings />} />
-            <Route path="/training/:id" element={<TrainingDetail />} />
-            <Route path="/add-training" element={<AddTraining />} />
-            <Route path="/weekly-plan" element={<WeeklyPlan />} />
-            <Route path="/micro-cycle" element={<MicroCycle />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/trainings" element={<ProtectedRoute><Trainings /></ProtectedRoute>} />
+            <Route path="/training/:id" element={<ProtectedRoute><TrainingDetail /></ProtectedRoute>} />
+            <Route path="/add-training" element={<ProtectedRoute><AddTraining /></ProtectedRoute>} />
+            <Route path="/weekly-plan" element={<ProtectedRoute><WeeklyPlan /></ProtectedRoute>} />
+            <Route path="/micro-cycle" element={<ProtectedRoute><MicroCycle /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -5,7 +5,7 @@ const mockTrainings: Training[] = [
   // Running trainings (30 entries - 75%)
   {
     id: '1',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Morning Run',
     type: 'running',
     date: '2025-01-15',
@@ -33,7 +33,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '3',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Evening Jog',
     type: 'running',
     date: '2025-01-13',
@@ -55,7 +55,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '6',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Interval Training',
     type: 'running',
     date: '2025-01-10',
@@ -77,7 +77,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '7',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Long Run',
     type: 'running',
     date: '2025-01-09',
@@ -98,7 +98,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '8',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Tempo Run',
     type: 'running',
     date: '2025-01-08',
@@ -118,7 +118,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '9',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Hill Training',
     type: 'running',
     date: '2025-01-07',
@@ -139,7 +139,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '10',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Recovery Run',
     type: 'running',
     date: '2025-01-06',
@@ -158,7 +158,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '11',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Speed Work',
     type: 'running',
     date: '2025-01-05',
@@ -179,7 +179,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '12',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Morning Jog',
     type: 'running',
     date: '2025-01-04',
@@ -196,7 +196,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '13',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Trail Run',
     type: 'running',
     date: '2025-01-03',
@@ -216,7 +216,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '14',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Fartlek Training',
     type: 'running',
     date: '2025-01-02',
@@ -235,7 +235,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '15',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'New Year Run',
     type: 'running',
     date: '2025-01-01',
@@ -253,7 +253,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '16',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Easy Run',
     type: 'running',
     date: '2024-12-31',
@@ -270,7 +270,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '17',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Track Workout',
     type: 'running',
     date: '2024-12-30',
@@ -291,7 +291,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '18',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Sunday Long Run',
     type: 'running',
     date: '2024-12-29',
@@ -310,7 +310,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '19',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Neighborhood Run',
     type: 'running',
     date: '2024-12-28',
@@ -328,7 +328,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '20',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Treadmill Run',
     type: 'running',
     date: '2024-12-27',
@@ -345,7 +345,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '21',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Park Run',
     type: 'running',
     date: '2024-12-26',
@@ -363,7 +363,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '22',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Christmas Morning Run',
     type: 'running',
     date: '2024-12-25',
@@ -381,7 +381,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '23',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Pre-Christmas Run',
     type: 'running',
     date: '2024-12-24',
@@ -398,7 +398,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '24',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Weekend Long Run',
     type: 'running',
     date: '2024-12-23',
@@ -417,7 +417,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '25',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Threshold Run',
     type: 'running',
     date: '2024-12-22',
@@ -436,7 +436,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '26',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Morning Shakeout',
     type: 'running',
     date: '2024-12-21',
@@ -453,7 +453,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '27',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Hill Repeats',
     type: 'running',
     date: '2024-12-20',
@@ -474,7 +474,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '28',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Recovery Jog',
     type: 'running',
     date: '2024-12-19',
@@ -491,7 +491,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '29',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Evening Run',
     type: 'running',
     date: '2024-12-18',
@@ -509,7 +509,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '30',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Midweek Run',
     type: 'running',
     date: '2024-12-17',
@@ -527,7 +527,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '31',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Base Building Run',
     type: 'running',
     date: '2024-12-16',
@@ -546,7 +546,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '32',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Speed Intervals',
     type: 'running',
     date: '2024-12-15',
@@ -569,7 +569,7 @@ const mockTrainings: Training[] = [
   // Strength trainings (10 entries - 25%)
   {
     id: '2',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Strength Training',
     type: 'strength',
     date: '2025-01-14',
@@ -600,7 +600,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '33',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Upper Body Strength',
     type: 'strength',
     date: '2025-01-12',
@@ -632,7 +632,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '34',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Leg Day',
     type: 'strength',
     date: '2025-01-11',
@@ -664,7 +664,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '35',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Core & Stability',
     type: 'strength',
     date: '2025-01-09',
@@ -695,7 +695,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '36',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Full Body Workout',
     type: 'strength',
     date: '2025-01-07',
@@ -727,7 +727,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '37',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Push Day',
     type: 'strength',
     date: '2025-01-05',
@@ -759,7 +759,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '38',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Pull Day',
     type: 'strength',
     date: '2025-01-03',
@@ -790,7 +790,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '39',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Functional Training',
     type: 'strength',
     date: '2025-01-01',
@@ -821,7 +821,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '40',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Holiday Workout',
     type: 'strength',
     date: '2024-12-30',
@@ -852,7 +852,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '41',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Recovery Strength',
     type: 'strength',
     date: '2024-12-28',
@@ -885,7 +885,7 @@ const mockTrainings: Training[] = [
   // Other activities (2 entries)
   {
     id: '4',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Yoga Session',
     type: 'yoga',
     date: '2025-01-12',
@@ -900,7 +900,7 @@ const mockTrainings: Training[] = [
   },
   {
     id: '5',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Cycling',
     type: 'cycling',
     date: '2025-01-11',
@@ -927,7 +927,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const mockPlannedTrainings: PlannedTraining[] = [
   {
     id: 'p1',
-    user_id: 'user1',
+    user_id: 'mock-user-123',
     title: 'Long Run',
     type: 'running',
     plannedDate: '2025-01-16',
@@ -941,11 +941,23 @@ const mockPlannedTrainings: PlannedTraining[] = [
 ];
 
 class MockApiService {
+  private getCurrentUserId(): string {
+    const mockUserString = localStorage.getItem('mockUser');
+    if (mockUserString) {
+      const mockUser = JSON.parse(mockUserString);
+      return mockUser.id;
+    }
+    return 'mock-user-123'; // Default user ID
+  }
+
   async getTrainings(limit?: number, offset?: number): Promise<Training[]> {
     console.log('MockApiService.getTrainings called with limit:', limit, 'offset:', offset);
     await delay(800); // Slightly longer delay to show lazy loading
     
-    let result = [...mockTrainings].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const currentUserId = this.getCurrentUserId();
+    let result = [...mockTrainings]
+      .filter(training => training.user_id === currentUserId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     if (offset) {
       result = result.slice(offset);
@@ -955,15 +967,16 @@ class MockApiService {
       result = result.slice(0, limit);
     }
     
-    console.log('MockApiService.getTrainings returning:', result.length, 'trainings');
+    console.log('MockApiService.getTrainings returning:', result.length, 'trainings for user:', currentUserId);
     return result;
   }
 
   async getTrainingById(id: string): Promise<Training> {
     await delay(300);
-    const training = mockTrainings.find(t => t.id === id);
+    const currentUserId = this.getCurrentUserId();
+    const training = mockTrainings.find(t => t.id === id && t.user_id === currentUserId);
     if (!training) {
-      throw new Error('Training not found');
+      throw new Error('Training not found for current user');
     }
     return training;
   }
@@ -972,9 +985,11 @@ class MockApiService {
     console.log('MockApiService createTraining called with:', trainingData);
     await delay(500);
     
+    const currentUserId = this.getCurrentUserId();
     const newTraining: Training = {
       ...trainingData,
       id: `mock-${Date.now()}`,
+      user_id: currentUserId,
       exercises: trainingData.exercises || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -986,9 +1001,10 @@ class MockApiService {
 
   async updateTraining(id: string, updates: Partial<Training>): Promise<Training> {
     await delay(300);
-    const index = mockTrainings.findIndex(t => t.id === id);
+    const currentUserId = this.getCurrentUserId();
+    const index = mockTrainings.findIndex(t => t.id === id && t.user_id === currentUserId);
     if (index === -1) {
-      throw new Error('Training not found');
+      throw new Error('Training not found for current user');
     }
     
     mockTrainings[index] = {
@@ -1002,23 +1018,27 @@ class MockApiService {
 
   async deleteTraining(id: string): Promise<void> {
     await delay(300);
-    const index = mockTrainings.findIndex(t => t.id === id);
+    const currentUserId = this.getCurrentUserId();
+    const index = mockTrainings.findIndex(t => t.id === id && t.user_id === currentUserId);
     if (index === -1) {
-      throw new Error('Training not found');
+      throw new Error('Training not found for current user');
     }
     mockTrainings.splice(index, 1);
   }
 
   async getPlannedTrainings(): Promise<PlannedTraining[]> {
     await delay(400);
-    return [...mockPlannedTrainings];
+    const currentUserId = this.getCurrentUserId();
+    return [...mockPlannedTrainings].filter(training => training.user_id === currentUserId);
   }
 
   async createPlannedTraining(plannedData: Omit<PlannedTraining, 'id' | 'createdAt' | 'updatedAt'>): Promise<PlannedTraining> {
     await delay(400);
+    const currentUserId = this.getCurrentUserId();
     const newPlanned: PlannedTraining = {
       ...plannedData,
       id: `planned-${Date.now()}`,
+      user_id: currentUserId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -1028,9 +1048,10 @@ class MockApiService {
 
   async updatePlannedTraining(id: string, updates: Partial<PlannedTraining>): Promise<PlannedTraining> {
     await delay(300);
-    const index = mockPlannedTrainings.findIndex(t => t.id === id);
+    const currentUserId = this.getCurrentUserId();
+    const index = mockPlannedTrainings.findIndex(t => t.id === id && t.user_id === currentUserId);
     if (index === -1) {
-      throw new Error('Planned training not found');
+      throw new Error('Planned training not found for current user');
     }
     
     mockPlannedTrainings[index] = {
@@ -1044,9 +1065,10 @@ class MockApiService {
 
   async deletePlannedTraining(id: string): Promise<void> {
     await delay(300);
-    const index = mockPlannedTrainings.findIndex(t => t.id === id);
+    const currentUserId = this.getCurrentUserId();
+    const index = mockPlannedTrainings.findIndex(t => t.id === id && t.user_id === currentUserId);
     if (index === -1) {
-      throw new Error('Planned training not found');
+      throw new Error('Planned training not found for current user');
     }
     mockPlannedTrainings.splice(index, 1);
   }

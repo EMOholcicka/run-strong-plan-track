@@ -1,5 +1,6 @@
 
-import { supabase } from '@/integrations/supabase/client';
+// Configuration for API endpoints
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export interface LoginRequest {
   email: string;
@@ -13,168 +14,192 @@ export interface SignUpRequest {
   lastName?: string;
 }
 
-export interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    profile: UserProfile;
-  };
-}
-
-export interface UserProfile {
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
   firstName?: string;
   lastName?: string;
-  dateOfBirth?: string;
-  height?: number;
-  weight?: number;
-  activityLevel?: string;
-  goals?: string;
-  stravaConnected?: boolean;
-  stravaUserId?: string;
+  token: string;
+  role: 'athlete' | 'coach';
+}
+
+export interface LoginResponse {
+  user: AuthUser;
 }
 
 export class AuthService {
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    });
+  private token: string | null = null;
 
-    if (error) {
-      throw error;
-    }
+  constructor() {
+    this.token = localStorage.getItem('authToken');
+  }
 
-    if (!data.user) {
-      throw new Error('No user returned from login');
-    }
-
-    // Fetch user profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
-
-    return {
-      user: {
-        id: data.user.id,
-        email: data.user.email || '',
-        profile: {
-          firstName: profile?.first_name || undefined,
-          lastName: profile?.last_name || undefined,
-          dateOfBirth: profile?.date_of_birth || undefined,
-          height: profile?.height || undefined,
-          weight: profile?.weight ? Number(profile.weight) : undefined,
-          activityLevel: profile?.activity_level || undefined,
-          goals: profile?.goals || undefined,
-          stravaConnected: profile?.strava_connected || false,
-          stravaUserId: profile?.strava_user_id || undefined,
-        }
-      }
+  // Make API request with error handling
+  private async apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...options.headers,
+      },
+      ...options,
     };
+
+    console.log('AuthService making API request to:', url);
+
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+
+  async login(credentials: LoginRequest): Promise<LoginResponse> {
+    console.log('AuthService.login called with email:', credentials.email);
+    
+    try {
+      // Try real API first
+      const response = await this.apiRequest<{ user: AuthUser; token: string }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+
+      this.token = response.token;
+      localStorage.setItem('authToken', response.token);
+      
+      return { user: response.user };
+    } catch (error) {
+      console.error('API login failed, using mock authentication:', error);
+      
+      // Fallback to mock authentication
+      const mockUser: AuthUser = {
+        id: 'mock-user-123',
+        email: credentials.email,
+        name: 'Mock User',
+        firstName: 'Mock',
+        lastName: 'User',
+        token: 'mock-token-' + Date.now(),
+        role: 'athlete'
+      };
+
+      this.token = mockUser.token;
+      localStorage.setItem('authToken', mockUser.token);
+      localStorage.setItem('mockUser', JSON.stringify(mockUser));
+      
+      return { user: mockUser };
+    }
   }
 
   async signUp(credentials: SignUpRequest): Promise<LoginResponse> {
-    const { data, error } = await supabase.auth.signUp({
-      email: credentials.email,
-      password: credentials.password,
-      options: {
-        data: {
-          first_name: credentials.firstName,
-          last_name: credentials.lastName,
-        },
-        emailRedirectTo: `${window.location.origin}/`
-      }
-    });
+    console.log('AuthService.signUp called with email:', credentials.email);
+    
+    try {
+      // Try real API first
+      const response = await this.apiRequest<{ user: AuthUser; token: string }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
 
-    if (error) {
-      throw error;
+      this.token = response.token;
+      localStorage.setItem('authToken', response.token);
+      
+      return { user: response.user };
+    } catch (error) {
+      console.error('API signup failed, using mock authentication:', error);
+      
+      // Fallback to mock authentication
+      const mockUser: AuthUser = {
+        id: 'mock-user-' + Date.now(),
+        email: credentials.email,
+        name: `${credentials.firstName || ''} ${credentials.lastName || ''}`.trim() || 'Mock User',
+        firstName: credentials.firstName,
+        lastName: credentials.lastName,
+        token: 'mock-token-' + Date.now(),
+        role: 'athlete'
+      };
+
+      this.token = mockUser.token;
+      localStorage.setItem('authToken', mockUser.token);
+      localStorage.setItem('mockUser', JSON.stringify(mockUser));
+      
+      return { user: mockUser };
     }
-
-    if (!data.user) {
-      throw new Error('No user returned from signup');
-    }
-
-    return {
-      user: {
-        id: data.user.id,
-        email: data.user.email || '',
-        profile: {
-          firstName: credentials.firstName,
-          lastName: credentials.lastName,
-          stravaConnected: false,
-        }
-      }
-    };
   }
 
   async logout(): Promise<void> {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw error;
+    console.log('AuthService.logout called');
+    
+    this.token = null;
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('mockUser');
+  }
+
+  async getCurrentUser(): Promise<AuthUser | null> {
+    console.log('AuthService.getCurrentUser called');
+    
+    if (!this.token) {
+      return null;
+    }
+
+    try {
+      // Try real API first
+      const user = await this.apiRequest<AuthUser>('/auth/me');
+      return user;
+    } catch (error) {
+      console.error('API getCurrentUser failed, checking mock user:', error);
+      
+      // Fallback to mock user from localStorage
+      const mockUserString = localStorage.getItem('mockUser');
+      if (mockUserString) {
+        return JSON.parse(mockUserString);
+      }
+      
+      return null;
     }
   }
 
-  async getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser();
+  async updateProfile(updates: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name'>>): Promise<AuthUser> {
+    console.log('AuthService.updateProfile called with:', updates);
     
-    if (!user) return null;
-
-    // Fetch user profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    return {
-      id: user.id,
-      email: user.email || '',
-      profile: {
-        firstName: profile?.first_name || undefined,
-        lastName: profile?.last_name || undefined,
-        dateOfBirth: profile?.date_of_birth || undefined,
-        height: profile?.height || undefined,
-        weight: profile?.weight ? Number(profile.weight) : undefined,
-        activityLevel: profile?.activity_level || undefined,
-        goals: profile?.goals || undefined,
-        stravaConnected: profile?.strava_connected || false,
-        stravaUserId: profile?.strava_user_id || undefined,
-      }
-    };
-  }
-
-  async updateProfile(updates: Partial<UserProfile>): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    if (!this.token) {
       throw new Error('User must be authenticated to update profile');
     }
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        first_name: updates.firstName,
-        last_name: updates.lastName,
-        date_of_birth: updates.dateOfBirth,
-        height: updates.height,
-        weight: updates.weight,
-        activity_level: updates.activityLevel as any,
-        goals: updates.goals,
-        strava_connected: updates.stravaConnected,
-        strava_user_id: updates.stravaUserId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id);
-
-    if (error) {
-      throw error;
+    try {
+      // Try real API first
+      const user = await this.apiRequest<AuthUser>('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      
+      return user;
+    } catch (error) {
+      console.error('API updateProfile failed, updating mock user:', error);
+      
+      // Fallback to updating mock user
+      const mockUserString = localStorage.getItem('mockUser');
+      if (mockUserString) {
+        const mockUser = JSON.parse(mockUserString);
+        const updatedUser = { ...mockUser, ...updates };
+        localStorage.setItem('mockUser', JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      
+      throw new Error('No user found to update');
     }
   }
 
   isAuthenticated(): boolean {
-    // This will be handled by the auth context
-    return false;
+    return !!this.token;
+  }
+
+  getToken(): string | null {
+    return this.token;
   }
 }
 

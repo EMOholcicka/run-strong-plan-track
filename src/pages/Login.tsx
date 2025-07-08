@@ -22,7 +22,7 @@ const Login = () => {
   const { login, signUp, isLoading, isAuthenticated } = useAuth();
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
+  if (isAuthenticated && !isLoading) {
     navigate("/");
     return null;
   }

@@ -1,23 +1,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, LoginRequest, SignUpRequest, UserProfile } from '@/services/authService';
-import { supabase } from '@/integrations/supabase/client';
+import { authService, LoginRequest, SignUpRequest, AuthUser } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
-import { User, Session } from '@supabase/supabase-js';
-
-interface AuthUser {
-  id: string;
-  email: string;
-  profile: UserProfile;
-}
 
 interface AuthContextType {
   user: AuthUser | null;
-  session: Session | null;
   login: (credentials: LoginRequest) => Promise<void>;
   signUp: (credentials: SignUpRequest) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (profile: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name'>>) => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -34,54 +25,33 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state change:', event, session);
-        setSession(session);
-        
-        if (session?.user) {
-          // Fetch user profile when user logs in
-          setTimeout(async () => {
-            try {
-              const currentUser = await authService.getCurrentUser();
-              setUser(currentUser);
-            } catch (error) {
-              console.error('Error fetching user profile:', error);
-            }
-          }, 0);
-        } else {
-          setUser(null);
-        }
-        
+    // Check for existing authentication on mount
+    const checkAuth = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+      } finally {
         setIsLoading(false);
       }
-    );
+    };
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        authService.getCurrentUser().then(setUser).catch(console.error);
-      }
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
   const login = async (credentials: LoginRequest) => {
     try {
       setIsLoading(true);
       const response = await authService.login(credentials);
+      setUser(response.user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${response.user.profile.firstName || response.user.email}!`,
+        description: `Welcome back, ${response.user.firstName || response.user.email}!`,
       });
     } catch (error) {
       toast({
@@ -99,9 +69,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       const response = await authService.signUp(credentials);
+      setUser(response.user);
       toast({
         title: "Account created",
-        description: "Please check your email to verify your account.",
+        description: "Welcome to FitTracker!",
       });
     } catch (error) {
       toast({
@@ -119,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await authService.logout();
       setUser(null);
-      setSession(null);
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
@@ -134,16 +104,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateProfile = async (profileUpdates: Partial<UserProfile>) => {
+  const updateProfile = async (profileUpdates: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name'>>) => {
     if (!user) return;
     
     try {
-      await authService.updateProfile(profileUpdates);
-      
-      const updatedUser = {
-        ...user,
-        profile: { ...user.profile, ...profileUpdates }
-      };
+      const updatedUser = await authService.updateProfile(profileUpdates);
       setUser(updatedUser);
       
       toast({
@@ -163,13 +128,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{
       user,
-      session,
       login,
       signUp,
       logout,
       updateProfile,
       isLoading,
-      isAuthenticated: !!session?.user
+      isAuthenticated: !!user
     }}>
       {children}
     </AuthContext.Provider>

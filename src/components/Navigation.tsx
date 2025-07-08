@@ -2,14 +2,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Home, List, Plus, Calendar, Activity, TrendingUp, User, Menu } from "lucide-react";
+import { Home, List, Plus, Calendar, Activity, TrendingUp, User, Menu, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 
 const Navigation = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout } = useAuth();
   
   const navItems = [
     { path: "/", label: "Dashboard", icon: Home },
@@ -42,9 +44,22 @@ const Navigation = () => {
       <Link to="/profile" onClick={onItemClick}>
         <Button variant="ghost" size="sm" className="flex items-center space-x-2 w-full justify-start">
           <User className="h-4 w-4" />
-          <span>Profile</span>
+          <span>{user?.firstName || 'Profile'}</span>
         </Button>
       </Link>
+      
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={() => {
+          onItemClick?.();
+          logout();
+        }}
+        className="flex items-center space-x-2 w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+      >
+        <LogOut className="h-4 w-4" />
+        <span>Logout</span>
+      </Button>
     </>
   );
 
@@ -92,13 +107,22 @@ const Navigation = () => {
                 })}
               </div>
               
-              <div className="ml-4">
+              <div className="ml-4 flex items-center space-x-2">
                 <Link to="/profile">
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                     <User className="h-4 w-4" />
-                    <span>Profile</span>
+                    <span>{user?.firstName || 'Profile'}</span>
                   </Button>
                 </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => logout()}
+                  className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
               </div>
             </div>
           )}
