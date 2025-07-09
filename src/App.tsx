@@ -14,6 +14,7 @@ import WeeklyPlan from "./pages/WeeklyPlan";
 import MicroCycle from "./pages/MicroCycle";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import Athletes from "./pages/Athletes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/add-training" element={<ProtectedRoute><AddTraining /></ProtectedRoute>} />
             <Route path="/weekly-plan" element={<ProtectedRoute><WeeklyPlan /></ProtectedRoute>} />
             <Route path="/micro-cycle" element={<ProtectedRoute><MicroCycle /></ProtectedRoute>} />
+            <Route path="/athletes" element={<ProtectedRoute><Athletes /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

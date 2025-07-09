@@ -22,6 +22,13 @@ export interface AuthUser {
   lastName?: string;
   token: string;
   role: 'athlete' | 'coach';
+  pending?: boolean;
+  age?: number;
+  height?: number;
+  weight?: number;
+  goals?: string;
+  assignedCoach?: string;
+  registrationDate?: string;
 }
 
 export interface LoginResponse {
@@ -84,7 +91,9 @@ export class AuthService {
         firstName: 'Mock',
         lastName: 'User',
         token: 'mock-token-' + Date.now(),
-        role: 'athlete'
+        role: 'athlete',
+        pending: false,
+        registrationDate: new Date().toISOString()
       };
 
       this.token = mockUser.token;
@@ -120,7 +129,9 @@ export class AuthService {
         firstName: credentials.firstName,
         lastName: credentials.lastName,
         token: 'mock-token-' + Date.now(),
-        role: 'athlete'
+        role: 'athlete',
+        pending: true,
+        registrationDate: new Date().toISOString()
       };
 
       this.token = mockUser.token;
@@ -163,7 +174,7 @@ export class AuthService {
     }
   }
 
-  async updateProfile(updates: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name'>>): Promise<AuthUser> {
+  async updateProfile(updates: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name' | 'age' | 'height' | 'weight' | 'goals'>>): Promise<AuthUser> {
     console.log('AuthService.updateProfile called with:', updates);
     
     if (!this.token) {
@@ -172,8 +183,8 @@ export class AuthService {
 
     try {
       // Try real API first
-      const user = await this.apiRequest<AuthUser>('/auth/profile', {
-        method: 'PUT',
+      const user = await this.apiRequest<AuthUser>('/auth/me', {
+        method: 'PATCH',
         body: JSON.stringify(updates),
       });
       

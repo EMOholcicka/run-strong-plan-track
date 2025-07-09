@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Eye, EyeOff } from "lucide-react";
+import { Activity, Eye, EyeOff, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
@@ -18,6 +18,7 @@ const Login = () => {
   const [lastName, setLastName] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
   const { login, signUp, isLoading, isAuthenticated } = useAuth();
 
@@ -40,13 +41,24 @@ const Login = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await signUp({ 
+      const response = await signUp({ 
         email: signUpEmail, 
         password: signUpPassword,
         firstName: firstName || undefined,
         lastName: lastName || undefined
       });
-      // Don't navigate immediately - user needs to verify email
+      
+      // Check if user needs approval
+      if (response.user.pending) {
+        setShowSuccess(true);
+        // Clear form
+        setSignUpEmail('');
+        setSignUpPassword('');
+        setFirstName('');
+        setLastName('');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       // Error handling is done in the useAuth hook
     }
@@ -180,6 +192,25 @@ const Login = () => {
           </div>
         </CardContent>
       </Card>
+
+      {showSuccess && (
+        <Card className="w-full max-w-md mt-4">
+          <CardContent className="text-center py-6">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-green-100 rounded-full">
+                <UserCheck className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Registration Successful!
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Your account has been created and is awaiting coach approval. 
+              You'll receive an email once it's activated.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

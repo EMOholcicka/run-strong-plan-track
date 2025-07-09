@@ -1,37 +1,67 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Navigation from "@/components/Navigation";
-import { User, Settings, Link as LinkIcon } from "lucide-react";
+import { User, Settings, Link as LinkIcon, Target, Calendar, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
+  const { user, updateProfile } = useAuth();
   const [profile, setProfile] = useState({
-    name: "Radek",
-    email: "radek@example.com",
-    age: "30",
-    weight: "72",
-    height: "180",
-    bio: "Passionate runner and fitness enthusiast",
+    firstName: "",
+    lastName: "",
+    age: "",
+    weight: "",
+    height: "",
+    goals: "",
     stravaConnected: false,
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSave = () => {
-    // TODO: Save to database
-    localStorage.setItem("userProfile", JSON.stringify(profile));
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been saved successfully.",
-    });
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        age: user.age?.toString() || "",
+        weight: user.weight?.toString() || "",
+        height: user.height?.toString() || "",
+        goals: user.goals || "",
+        stravaConnected: false,
+      });
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const updates = {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        name: `${profile.firstName} ${profile.lastName}`.trim(),
+        age: profile.age ? parseInt(profile.age) : undefined,
+        weight: profile.weight ? parseFloat(profile.weight) : undefined,
+        height: profile.height ? parseInt(profile.height) : undefined,
+        goals: profile.goals,
+      };
+
+      await updateProfile(updates);
+      setIsEditing(false);
+    } catch (error) {
+      // Error handling is done in updateProfile
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStravaConnect = () => {
-    // TODO: Implement Strava OAuth
     setProfile(prev => ({ ...prev, stravaConnected: !prev.stravaConnected }));
     toast({
       title: profile.stravaConnected ? "Strava disconnected" : "Strava connected",
@@ -39,6 +69,11 @@ const Profile = () => {
         ? "Your Strava account has been disconnected." 
         : "Ready to sync with Strava! (Integration coming soon)",
     });
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -55,30 +90,59 @@ const Profile = () => {
           {/* Personal Information */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                Personal Information
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <User className="h-5 w-5 mr-2" />
+                  Personal Information
+                </CardTitle>
+                {!isEditing ? (
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <div className="space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleSave} disabled={loading}>
+                      {loading ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
-                    id="name"
-                    value={profile.name}
-                    onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                    id="firstName"
+                    value={profile.firstName}
+                    onChange={(e) => setProfile(prev => ({ ...prev, firstName: e.target.value }))}
+                    disabled={!isEditing}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                    id="lastName"
+                    value={profile.lastName}
+                    onChange={(e) => setProfile(prev => ({ ...prev, lastName: e.target.value }))}
+                    disabled={!isEditing}
                   />
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={user?.email || ""}
+                  disabled
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
               </div>
               
               <div className="grid grid-cols-3 gap-4">
@@ -89,6 +153,7 @@ const Profile = () => {
                     type="number"
                     value={profile.age}
                     onChange={(e) => setProfile(prev => ({ ...prev, age: e.target.value }))}
+                    disabled={!isEditing}
                   />
                 </div>
                 <div>
@@ -96,8 +161,10 @@ const Profile = () => {
                   <Input
                     id="weight"
                     type="number"
+                    step="0.1"
                     value={profile.weight}
                     onChange={(e) => setProfile(prev => ({ ...prev, weight: e.target.value }))}
+                    disabled={!isEditing}
                   />
                 </div>
                 <div>
@@ -107,24 +174,65 @@ const Profile = () => {
                     type="number"
                     value={profile.height}
                     onChange={(e) => setProfile(prev => ({ ...prev, height: e.target.value }))}
+                    disabled={!isEditing}
                   />
                 </div>
               </div>
               
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profile.bio}
-                  onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
-                  rows={3}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="registrationDate">Registration Date</Label>
+                  <Input
+                    id="registrationDate"
+                    value={formatDate(user?.registrationDate)}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="assignedCoach">Assigned Coach</Label>
+                  <Input
+                    id="assignedCoach"
+                    value={user?.assignedCoach || "Not assigned"}
+                    disabled
+                    className="bg-gray-50"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Integrations */}
-          <Card>
+          {/* Training Goals & Integrations */}
+          <div className="space-y-8">
+            {/* Training Goals */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Target className="h-5 w-5 mr-2" />
+                  Training Goals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <Label htmlFor="goals">Your Training Goal</Label>
+                  <Textarea
+                    id="goals"
+                    placeholder="e.g., Run 10km under 50 minutes, Complete first half marathon..."
+                    value={profile.goals}
+                    onChange={(e) => setProfile(prev => ({ ...prev, goals: e.target.value }))}
+                    disabled={!isEditing}
+                    rows={3}
+                    className={!isEditing ? "bg-gray-50" : ""}
+                  />
+                  {!profile.goals && !isEditing && (
+                    <p className="text-sm text-gray-500 mt-2">No training goals set yet.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Integrations */}
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Settings className="h-5 w-5 mr-2" />
@@ -160,12 +268,9 @@ const Profile = () => {
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-8 flex justify-end">
-          <Button onClick={handleSave}>Save Changes</Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
     </div>

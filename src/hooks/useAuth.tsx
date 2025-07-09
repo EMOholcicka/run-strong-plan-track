@@ -1,14 +1,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService, LoginRequest, SignUpRequest, AuthUser } from '@/services/authService';
+import { authService, LoginRequest, SignUpRequest, AuthUser, LoginResponse } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: AuthUser | null;
   login: (credentials: LoginRequest) => Promise<void>;
-  signUp: (credentials: SignUpRequest) => Promise<void>;
+  signUp: (credentials: SignUpRequest) => Promise<LoginResponse>;
   logout: () => Promise<void>;
-  updateProfile: (profile: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name'>>) => Promise<void>;
+  updateProfile: (profile: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name' | 'age' | 'height' | 'weight' | 'goals'>>) => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -70,10 +70,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       const response = await authService.signUp(credentials);
       setUser(response.user);
-      toast({
-        title: "Account created",
-        description: "Welcome to FitTracker!",
-      });
+      
+      if (!response.user.pending) {
+        toast({
+          title: "Account created",
+          description: "Welcome to FitTracker!",
+        });
+      }
+      
+      return response;
     } catch (error) {
       toast({
         title: "Sign up failed",
@@ -104,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateProfile = async (profileUpdates: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name'>>) => {
+  const updateProfile = async (profileUpdates: Partial<Pick<AuthUser, 'firstName' | 'lastName' | 'name' | 'age' | 'height' | 'weight' | 'goals'>>) => {
     if (!user) return;
     
     try {

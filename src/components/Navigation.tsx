@@ -2,7 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Home, List, Plus, Calendar, Activity, TrendingUp, User, Menu, LogOut } from "lucide-react";
+import { Home, List, Plus, Calendar, Activity, TrendingUp, User, Menu, LogOut, Users } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
@@ -19,6 +19,7 @@ const Navigation = () => {
     { path: "/add-training", label: "Add Training", icon: Plus },
     { path: "/weekly-plan", label: "Weekly Plan", icon: Calendar },
     { path: "/micro-cycle", label: "Micro Cycle", icon: TrendingUp },
+    ...(user?.role === 'coach' ? [{ path: "/athletes", label: "Athletes", icon: Users }] : []),
   ];
 
   const NavItems = ({ onItemClick }: { onItemClick?: () => void }) => (
