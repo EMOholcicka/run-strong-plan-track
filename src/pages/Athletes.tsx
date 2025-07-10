@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
-import { Users, UserCheck, Clock, Calendar, Target, CheckCircle, XCircle } from "lucide-react";
+import { Users, UserCheck, Clock, Calendar, Target, CheckCircle, XCircle, Route, BarChart3, MessageSquare, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { coachService, AthleteWithStats } from "@/services/coachService";
 import { AuthUser } from "@/services/authService";
@@ -77,6 +78,15 @@ const Athletes = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const getProgressColor = (status: string) => {
+    switch (status) {
+      case 'on-track': return 'bg-green-500';
+      case 'partially-completed': return 'bg-yellow-500';
+      case 'missed-majority': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -120,6 +130,18 @@ const Athletes = () => {
                       <Badge variant="secondary">Athlete</Badge>
                     </div>
                     <p className="text-sm text-gray-600">{athlete.email}</p>
+                    
+                    {/* Tags */}
+                    {athlete.tags && athlete.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {athlete.tags.map((tag, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            <Tag className="h-3 w-3 mr-1" />
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {athlete.goals && (
@@ -132,33 +154,111 @@ const Athletes = () => {
                       </div>
                     )}
                     
+                    {/* This Week Stats */}
                     {athlete.weeklyTrainingStats && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">This Week</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">This Week</p>
+                          {athlete.progressIndicator && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${
+                                athlete.progressIndicator.status === 'on-track' ? 'text-green-600 border-green-200' :
+                                athlete.progressIndicator.status === 'partially-completed' ? 'text-yellow-600 border-yellow-200' :
+                                'text-red-600 border-red-200'
+                              }`}
+                            >
+                              {athlete.progressIndicator.percentage}%
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        {athlete.progressIndicator && (
+                          <div className="space-y-1">
+                            <Progress 
+                              value={athlete.progressIndicator.percentage} 
+                              className={`h-2 ${getProgressColor(athlete.progressIndicator.status)}`}
+                            />
+                            <p className="text-xs text-gray-500">
+                              {athlete.weeklyTrainingStats.completedTrainings}/{athlete.weeklyTrainingStats.plannedTrainings} planned trainings
+                            </p>
+                          </div>
+                        )}
+                        
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-3 w-3 text-green-600" />
-                            <span>{athlete.weeklyTrainingStats.totalTrainings} trainings</span>
+                            <span>{athlete.weeklyTrainingStats.totalTrainings} sessions</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Clock className="h-3 w-3 text-blue-600" />
                             <span>{athlete.weeklyTrainingStats.totalDuration}min</span>
                           </div>
+                          <div className="flex items-center space-x-1">
+                            <Route className="h-3 w-3 text-purple-600" />
+                            <span>{athlete.weeklyTrainingStats.totalDistance}km</span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Last: {athlete.weeklyTrainingStats.lastTrainingDate && formatDate(athlete.weeklyTrainingStats.lastTrainingDate)}
+                          </div>
                         </div>
-                        {athlete.weeklyTrainingStats.lastTrainingDate && (
-                          <p className="text-xs text-gray-500">
-                            Last: {formatDate(athlete.weeklyTrainingStats.lastTrainingDate)}
-                          </p>
+
+                        {/* Training Type Breakdown */}
+                        {athlete.weeklyTrainingStats.typeBreakdown && (
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-gray-700">Training Types</p>
+                            <div className="grid grid-cols-3 gap-1 text-xs">
+                              {Object.entries(athlete.weeklyTrainingStats.typeBreakdown).map(([type, count]) => (
+                                <span key={type} className="text-gray-600">
+                                  {type}: {count}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
+
+                    {/* Last Week Comparison */}
+                    {athlete.lastWeekStats && (
+                      <div className="border-t pt-3 space-y-2">
+                        <p className="text-sm font-medium text-gray-700">Last Week</p>
+                        <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                          <div>
+                            <span className="font-medium">{athlete.lastWeekStats.totalTrainings}</span>
+                            <br />
+                            <span>sessions</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">{athlete.lastWeekStats.totalDuration}min</span>
+                            <br />
+                            <span>time</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">{athlete.lastWeekStats.totalDistance}km</span>
+                            <br />
+                            <span>distance</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
-                    <div className="pt-2">
-                      <Link to={`/athlete/${athlete.id}/profile`}>
-                        <Button size="sm" className="w-full">
-                          View Profile
-                        </Button>
-                      </Link>
+                    {/* Action Buttons */}
+                    <div className="pt-2 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link to={`/athlete/${athlete.id}/profile`}>
+                          <Button size="sm" variant="outline" className="w-full">
+                            View Profile
+                          </Button>
+                        </Link>
+                        <Link to={`/weekly-plan?athlete=${athlete.id}`}>
+                          <Button size="sm" className="w-full">
+                            <BarChart3 className="h-3 w-3 mr-1" />
+                            View Plan
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
